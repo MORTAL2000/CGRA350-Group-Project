@@ -49,6 +49,9 @@ private:
 	// geometry
 	basic_model m_model;
 
+	// terrain generation
+	std::vector<std::vector<float>> noiseMap;
+
 public:
 	// setup
 	Application(GLFWwindow *);

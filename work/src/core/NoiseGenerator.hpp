@@ -21,7 +21,7 @@ private:
 public:
 	NoiseGenerator(float amplitude);
 
-	std::vector<std::vector<float>> GenerateNoiseMap(int width, int height);
+	std::vector<std::vector<float>> GenerateNoiseMap(int width, int height, int octaves, float scale, float persistance, float lacunarity);
 
 	float getHeight(int x, int y);
 };

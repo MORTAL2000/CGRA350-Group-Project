@@ -48,8 +48,8 @@ Application::Application(GLFWwindow *window) : m_window(window) {
 	m_model.color = vec3(1, 0, 0);
 
 	NoiseGenerator ng(70.f);
-	int height = 100, width = 100;
-	noiseMap = ng.GenerateNoiseMap(width, height);
+	int height = 256, width = 256;
+	noiseMap = ng.GenerateNoiseMap(width, height, 4, 27.6, 0.5, 2);
 
 	vector<vec3> points;
 
@@ -123,6 +123,7 @@ Application::Application(GLFWwindow *window) : m_window(window) {
 		mb.push_index(indexBuffer.at(i));
 	}
 	m_model.mesh = mb.build();
+	
 }
 
 

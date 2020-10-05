@@ -2,8 +2,11 @@
 
 #include "core/NoiseGenerator.hpp"
 
+#include <glm/gtc/noise.hpp>
+
 #include <iostream>
 #include <random>
+using namespace std;
 
 NoiseGenerator::NoiseGenerator(float amplitude) : m_amplitude(amplitude)
 {
@@ -14,7 +17,7 @@ NoiseGenerator::NoiseGenerator(float amplitude) : m_amplitude(amplitude)
 	m_seed = uniform_dist(engine); // set the seed
 }
 
-std::vector<std::vector<float>> NoiseGenerator::GenerateNoiseMap(int width, int height)
+std::vector<std::vector<float>> NoiseGenerator::GenerateNoiseMap(int width, int height, int octaves, float scale, float persistance, float lacunarity)
 {
 
 	m_noiseMap.resize(width, std::vector<float>(height, -1));
@@ -23,8 +26,22 @@ std::vector<std::vector<float>> NoiseGenerator::GenerateNoiseMap(int width, int 
 	{
 		for (int x = 0; x < width; x++)
 		{
-			float perlinValue = 1 * x * y;
-			m_noiseMap.at(x).at(y) = perlinValue;
+			float amplitude = 1.f;
+			float frequency = 1.f;
+			float noiseHeight = 0.f;
+			for (int i = 0; i < octaves; i++)
+			{
+				float sampleX = x / scale * frequency;
+				float sampleY = y / scale * frequency;
+
+				float value = glm::perlin(glm::vec2(x, y)) * 2 - 1;
+				noiseHeight += value * amplitude;
+
+				amplitude *= persistance;
+				frequency *= lacunarity;
+			}
+			m_noiseMap.at(x).at(y) = noiseHeight;
+
 		}
 	}
 

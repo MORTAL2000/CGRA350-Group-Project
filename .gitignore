@@ -32,3 +32,5 @@
 *.app
 
 runcmake.*
+*.sh
+*.bat

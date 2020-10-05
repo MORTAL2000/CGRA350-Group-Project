@@ -1,4 +1,3 @@
-
 // std
 #include <iostream>
 #include <string>
@@ -15,6 +14,8 @@
 #include "cgra/cgra_image.hpp"
 #include "cgra/cgra_shader.hpp"
 #include "cgra/cgra_wavefront.hpp"
+
+#include "core/camera.hpp"
 
 
 using namespace std;
@@ -68,10 +69,7 @@ void Application::render() {
 	mat4 proj = perspective(1.f, float(width) / height, 0.1f, 1000.f);
 
 	// view matrix
-	mat4 view = translate(mat4(1), vec3(0, 0, -m_distance))
-		* rotate(mat4(1), m_pitch, vec3(1, 0, 0))
-		* rotate(mat4(1), m_yaw,   vec3(0, 1, 0));
-
+	mat4 view = m_camera.Update();
 
 	// helpful draw options
 	if (m_show_grid) drawGrid(view, proj);
@@ -91,12 +89,6 @@ void Application::renderGUI() {
 	ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiSetCond_Once);
 	ImGui::Begin("Options", 0);
 
-	// display current camera parameters
-	ImGui::Text("Application %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-	ImGui::SliderFloat("Pitch", &m_pitch, -pi<float>() / 2, pi<float>() / 2, "%.2f");
-	ImGui::SliderFloat("Yaw", &m_yaw, -pi<float>(), pi<float>(), "%.2f");
-	ImGui::SliderFloat("Distance", &m_distance, 0, 100, "%.2f", 2.0f);
-
 	// helpful drawing options
 	ImGui::Checkbox("Show axis", &m_show_axis);
 	ImGui::SameLine();
@@ -105,38 +97,16 @@ void Application::renderGUI() {
 	ImGui::SameLine();
 	if (ImGui::Button("Screenshot")) rgba_image::screenshot(true);
 
-	
-	ImGui::Separator();
-
-	// example of how to use input boxes
-	static float exampleInput;
-	if (ImGui::InputFloat("example input", &exampleInput)) {
-		cout << "example input changed to " << exampleInput << endl;
-	}
-
 	// finish creating window
 	ImGui::End();
 }
 
 
 void Application::cursorPosCallback(double xpos, double ypos) {
-	if (m_leftMouseDown) {
-		vec2 whsize = m_windowsize / 2.0f;
-
-		// clamp the pitch to [-pi/2, pi/2]
-		m_pitch += float(acos(glm::clamp((m_mousePosition.y - whsize.y) / whsize.y, -1.0f, 1.0f))
-			- acos(glm::clamp((float(ypos) - whsize.y) / whsize.y, -1.0f, 1.0f)));
-		m_pitch = float(glm::clamp(m_pitch, -pi<float>() / 2, pi<float>() / 2));
-
-		// wrap the yaw to [-pi, pi]
-		m_yaw += float(acos(glm::clamp((m_mousePosition.x - whsize.x) / whsize.x, -1.0f, 1.0f))
-			- acos(glm::clamp((float(xpos) - whsize.x) / whsize.x, -1.0f, 1.0f)));
-		if (m_yaw > pi<float>()) m_yaw -= float(2 * pi<float>());
-		else if (m_yaw < -pi<float>()) m_yaw += float(2 * pi<float>());
+	if (m_captureMouse) {
+		m_camera.Rotate(xpos, ypos, m_windowsize);
+		glfwSetCursorPos(m_window, m_windowsize.x / 2, m_windowsize.y / 2);
 	}
-
-	// updated mouse position
-	m_mousePosition = vec2(xpos, ypos);
 }
 
 
@@ -150,13 +120,42 @@ void Application::mouseButtonCallback(int button, int action, int mods) {
 
 
 void Application::scrollCallback(double xoffset, double yoffset) {
-	(void)xoffset; // currently un-used
-	m_distance *= pow(1.1f, -yoffset);
+	(void)xoffset, (void)yoffset; // currently un-used
 }
 
 
 void Application::keyCallback(int key, int scancode, int action, int mods) {
-	(void)key, (void)scancode, (void)action, (void)mods; // currently un-used
+	(void)scancode, (void)mods; // currently un-used
+
+	// W Key
+	if (key == 87 && action > 0) {
+		m_camera.Move(CameraMove::forward);
+	}
+	// S Key
+	else if (key == 83 && action > 0) {
+		m_camera.Move(CameraMove::backward);
+	}
+	// A Key
+	else if (key == 65 && action > 0) {
+		m_camera.Move(CameraMove::left);
+	}
+	// D Key
+	else if (key == 68 && action > 0) {
+		m_camera.Move(CameraMove::right);
+	}
+
+	// Mouse capture Q
+	if (key == 81 && action == 1) {
+		if (!m_captureMouse) {
+			//glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+			m_captureMouse = true;
+		}
+		else
+		{
+			//glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+			m_captureMouse = false;
+		}
+	}
 }
 
 

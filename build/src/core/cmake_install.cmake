@@ -1,4 +1,4 @@
-# Install script for directory: D:/Projects/CGRA350-Group-Project/work/src
+# Install script for directory: D:/Projects/CGRA350-Group-Project/work/src/core
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -30,12 +30,5 @@ endif()
 # Is this installation the result of a crosscompile?
 if(NOT DEFINED CMAKE_CROSSCOMPILING)
   set(CMAKE_CROSSCOMPILING "FALSE")
-endif()
-
-if(NOT CMAKE_INSTALL_LOCAL_ONLY)
-  # Include the install script for each subdirectory.
-  include("D:/Projects/CGRA350-Group-Project/build/src/cgra/cmake_install.cmake")
-  include("D:/Projects/CGRA350-Group-Project/build/src/core/cmake_install.cmake")
-
 endif()
 

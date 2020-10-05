@@ -9,6 +9,7 @@
 #include "opengl.hpp"
 #include "cgra/cgra_mesh.hpp"
 #include "skeleton_model.hpp"
+#include "core/camera.hpp"
 
 
 // Basic model that holds the shader, mesh and transform for drawing.
@@ -33,10 +34,8 @@ private:
 	glm::vec2 m_windowsize;
 	GLFWwindow *m_window;
 
-	// oribital camera
-	float m_pitch = .86;
-	float m_yaw = -.86;
-	float m_distance = 20;
+	Camera m_camera;
+	bool m_captureMouse;
 
 	// last input
 	bool m_leftMouseDown = false;

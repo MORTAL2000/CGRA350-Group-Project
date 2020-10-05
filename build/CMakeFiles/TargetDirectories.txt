@@ -18,5 +18,6 @@ D:/Projects/CGRA350-Group-Project/build/ext/glm/CMakeFiles/INSTALL.dir
 D:/Projects/CGRA350-Group-Project/build/src/CMakeFiles/INSTALL.dir
 D:/Projects/CGRA350-Group-Project/build/src/CMakeFiles/base.dir
 D:/Projects/CGRA350-Group-Project/build/src/cgra/CMakeFiles/INSTALL.dir
+D:/Projects/CGRA350-Group-Project/build/src/core/CMakeFiles/INSTALL.dir
 D:/Projects/CGRA350-Group-Project/build/res/CMakeFiles/res.dir
 D:/Projects/CGRA350-Group-Project/build/res/CMakeFiles/INSTALL.dir

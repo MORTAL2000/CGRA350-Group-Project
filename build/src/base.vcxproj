@@ -353,6 +353,10 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClInclude Include="D:\Projects\CGRA350-Group-Project\work\src\cgra\cgra_wavefront.hpp" />
     <None Include="D:\Projects\CGRA350-Group-Project\work\src\cgra\CMakeLists.txt">
     </None>
+    <ClInclude Include="D:\Projects\CGRA350-Group-Project\work\src\core\camera.hpp" />
+    <ClCompile Include="D:\Projects\CGRA350-Group-Project\work\src\core\camera.cpp" />
+    <None Include="D:\Projects\CGRA350-Group-Project\work\src\core\CMakeLists.txt">
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="D:\Projects\CGRA350-Group-Project\build\ZERO_CHECK.vcxproj">

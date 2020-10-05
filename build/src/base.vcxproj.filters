@@ -25,6 +25,9 @@
     <ClCompile Include="D:\Projects\CGRA350-Group-Project\work\src\cgra\cgra_shader.cpp">
       <Filter>src\cgra</Filter>
     </ClCompile>
+    <ClCompile Include="D:\Projects\CGRA350-Group-Project\work\src\core\camera.cpp">
+      <Filter>src\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="D:\Projects\CGRA350-Group-Project\work\src\application.hpp">
@@ -57,6 +60,9 @@
     <ClInclude Include="D:\Projects\CGRA350-Group-Project\work\src\cgra\cgra_wavefront.hpp">
       <Filter>src\cgra</Filter>
     </ClInclude>
+    <ClInclude Include="D:\Projects\CGRA350-Group-Project\work\src\core\camera.hpp">
+      <Filter>src\core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="D:\Projects\CGRA350-Group-Project\work\src\CMakeLists.txt">
@@ -67,6 +73,9 @@
     <None Include="D:\Projects\CGRA350-Group-Project\work\src\cgra\CMakeLists.txt">
       <Filter>src\cgra</Filter>
     </None>
+    <None Include="D:\Projects\CGRA350-Group-Project\work\src\core\CMakeLists.txt">
+      <Filter>src\core</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -74,6 +83,9 @@
     </Filter>
     <Filter Include="src\cgra">
       <UniqueIdentifier>{63AAF9BB-7938-3ADF-B0CE-3F09DCF05B67}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core">
+      <UniqueIdentifier>{B3568C3D-E935-357F-A986-2B9C9CB68F0B}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

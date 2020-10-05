@@ -14,9 +14,6 @@ enum class CameraMove {
 
 class Camera {
 private:
-	const float sensitivity = 0.1f;
-	const float camera_speed = 25.0f;
-
 	glm::vec3 m_cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
 	glm::vec3 m_cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 	glm::vec3 m_cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -34,6 +31,9 @@ private:
 	float m_deltaTime = 0.0f;
 	float m_lastFrame = 0.0f;
 public:
+	float sensitivity = 10.0f;
+	float camera_speed = 25.0f;
+
 	glm::mat4 Update();
 	void Rotate(double xpos, double ypos, glm::vec2& windowSize);
 	void Move(CameraMove dir);

@@ -27,8 +27,8 @@ void Camera::Rotate(double xpos, double ypos, vec2& windowSize)
 	float xoffset = xpos - m_lastX;
 	float yoffset = ypos - m_lastY;
 
-	xoffset *= sensitivity;
-	yoffset *= sensitivity;
+	xoffset *= (sensitivity/100);
+	yoffset *= (sensitivity/100);
 
 	m_yaw += xoffset;
 	m_pitch -= yoffset;

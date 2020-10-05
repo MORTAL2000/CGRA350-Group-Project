@@ -96,6 +96,13 @@ void Application::renderGUI() {
 	ImGui::Checkbox("Wireframe", &m_showWireframe);
 	ImGui::SameLine();
 	if (ImGui::Button("Screenshot")) rgba_image::screenshot(true);
+	ImGui::Text("WASD - Move \nQ - Capture/Release Mouse");
+
+	ImGui::Separator();
+	if (ImGui::CollapsingHeader("Camera Settings")) {
+		ImGui::SliderFloat("Sensitivity", &m_camera.sensitivity, 0, 100, "%.2f");
+		ImGui::SliderFloat("Speed", &m_camera.camera_speed, 0, 100, "%.2f");
+	}
 
 	// finish creating window
 	ImGui::End();

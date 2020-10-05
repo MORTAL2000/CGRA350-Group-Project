@@ -14,6 +14,7 @@ add_executable(${CGRA_PROJECT} ${sources})
 # ----------------------------- #
 add_subdirectory(cgra)
 add_subdirectory(core)
+add_subdirectory(bird-simulation)
 
 #########################################################
 # Link and Build Executable

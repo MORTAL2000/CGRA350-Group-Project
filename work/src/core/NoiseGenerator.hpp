@@ -13,10 +13,10 @@
 class NoiseGenerator
 {
 private:
-	int m_seed = -1;
 	float m_amplitude = -1;
 
 	std::vector<std::vector<float>> m_noiseMap;
+	std::vector<float> m_seeds;
 
 public:
 	NoiseGenerator(float amplitude);

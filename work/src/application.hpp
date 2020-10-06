@@ -51,6 +51,7 @@ private:
 
 	// terrain generation
 	std::vector<std::vector<float>> noiseMap;
+	int m_octaves = 4;
 
 public:
 	// setup
@@ -70,4 +71,7 @@ public:
 	void scrollCallback(double xoffset, double yoffset);
 	void keyCallback(int key, int scancode, int action, int mods);
 	void charCallback(unsigned int c);
+
+	// terrain generation
+	void updateTerrain();
 };

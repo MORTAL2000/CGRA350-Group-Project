@@ -44,12 +44,12 @@ Application::Application(GLFWwindow *window) : m_window(window) {
 	GLuint shader = sb.build();
 
 	m_model.shader = shader;
-	m_model.mesh = load_wavefront_data(CGRA_SRCDIR + std::string("/res//assets//teapot.obj")).build();
+	//m_model.mesh = load_wavefront_data(CGRA_SRCDIR + std::string("/res//assets//teapot.obj")).build();
 	m_model.color = vec3(1, 0, 0);
 
 	NoiseGenerator ng(70.f);
 	int height = 256, width = 256;
-	noiseMap = ng.GenerateNoiseMap(width, height, 4, 27.6, 0.5, 2);
+	noiseMap = ng.GenerateNoiseMap(width, height, m_octaves, 27.6, 0.5, 2);
 
 	vector<vec3> points;
 
@@ -71,8 +71,7 @@ Application::Application(GLFWwindow *window) : m_window(window) {
 		}
 	}
 
-	vector<int> indexBuffer;
-	indexBuffer.resize(((width - 1) * (height - 1) * 2) * 3);
+	vector<int> indexBuffer(((width - 1) * (height - 1) * 2) * 3);;
 	unsigned int index = 0;
 	for (int j = 0; j < height - 1; j++)
 	{
@@ -92,8 +91,7 @@ Application::Application(GLFWwindow *window) : m_window(window) {
 		}
 	}
 
-	vector<vec3> normalBuffer;
-	normalBuffer.resize(width * height);
+	vector<vec3> normalBuffer(width * height);
 	for (int i = 0; i < indexBuffer.size(); i += 3)
 	{
 		vec3 v0 = points[indexBuffer[i + 0]];
@@ -122,8 +120,8 @@ Application::Application(GLFWwindow *window) : m_window(window) {
 	{
 		mb.push_index(indexBuffer.at(i));
 	}
+
 	m_model.mesh = mb.build();
-	
 }
 
 
@@ -184,6 +182,13 @@ void Application::renderGUI() {
 		ImGui::SliderFloat("Speed", &m_camera.camera_speed, 0, 100, "%.2f");
 	}
 
+	ImGui::Separator();
+	if (ImGui::CollapsingHeader("Terrain Generation Inputs"))
+	{
+		ImGui::SliderInt("octaves", &m_octaves, 2, 10, "%1.0f");
+
+		if (ImGui::Button("Update Terrain")) updateTerrain();
+	}
 	// finish creating window
 	ImGui::End();
 }
@@ -248,4 +253,83 @@ void Application::keyCallback(int key, int scancode, int action, int mods) {
 
 void Application::charCallback(unsigned int c) {
 	(void)c; // currently un-used
+}
+
+void Application::updateTerrain()
+{
+	NoiseGenerator ng(70.f);
+	int height = 256, width = 256;
+	noiseMap = ng.GenerateNoiseMap(width, height, m_octaves, 27.6, 0.5, 2);
+
+	vector<vec3> points;
+
+	for (int j = 0; j < height; j++)
+	{
+		for (int i = 0; i < width; i++)
+		{
+			float value = ng.getHeight(i, j);
+
+			float s = (i / (float)(width - 1));
+			float t = (j / (float)(height - 1));
+
+			float x = (s * width) - (width / 2);
+			float y = value;
+			float z = (t * height) - (height / 2);
+
+			vec3 vertex(x, y, z);
+			points.push_back(vertex);
+		}
+	}
+
+	vector<int> indexBuffer(((width - 1) * (height - 1) * 2) * 3);;
+	unsigned int index = 0;
+	for (int j = 0; j < height - 1; j++)
+	{
+		for (int i = 0; i < width - 1; i++)
+		{
+			int vertexIndex = (j * width) + i;
+
+			// TOP
+			indexBuffer[index++] = vertexIndex;
+			indexBuffer[index++] = vertexIndex + width + 1;
+			indexBuffer[index++] = vertexIndex + 1;
+
+			// BOTTOM
+			indexBuffer[index++] = vertexIndex;
+			indexBuffer[index++] = vertexIndex + width;
+			indexBuffer[index++] = vertexIndex + width + 1;
+		}
+	}
+
+	vector<vec3> normalBuffer(width * height);
+	for (int i = 0; i < indexBuffer.size(); i += 3)
+	{
+		vec3 v0 = points[indexBuffer[i + 0]];
+		vec3 v1 = points[indexBuffer[i + 1]];
+		vec3 v2 = points[indexBuffer[i + 2]];
+
+		vec3 normal = normalize(cross(v1 - v0, v2 - v0));
+
+		normalBuffer[indexBuffer[i + 0]] += normal;
+		normalBuffer[indexBuffer[i + 1]] += normal;
+		normalBuffer[indexBuffer[i + 2]] += normal;
+	}
+
+	mesh_builder mb;
+	unsigned int count = 0;
+	for (vec3 point : points)
+	{
+		mesh_vertex v;
+		v.pos = point;
+		v.norm = normalBuffer[count];
+		mb.push_vertex(v);
+		count++;
+	}
+
+	for (int i = 0; i < indexBuffer.size() - 1; i++)
+	{
+		mb.push_index(indexBuffer.at(i));
+	}
+
+	m_model.mesh = mb.build();
 }

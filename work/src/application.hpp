@@ -10,6 +10,7 @@
 #include "cgra/cgra_mesh.hpp"
 #include "skeleton_model.hpp"
 #include "core/camera.hpp"
+#include "core/NoiseGenerator.hpp"
 
 
 // Basic model that holds the shader, mesh and transform for drawing.
@@ -52,6 +53,10 @@ private:
 	// terrain generation
 	std::vector<std::vector<float>> noiseMap;
 	int m_octaves = 4;
+	float m_amplitude = 2.f;
+
+	int m_height = 256, m_width = 256;
+	NoiseGenerator m_ng;
 
 public:
 	// setup

@@ -24,9 +24,10 @@ using namespace cgra;
 using namespace glm;
 
 
-void basic_model::draw(const glm::mat4 &view, const glm::mat4 proj) {
+void basic_model::draw(const glm::mat4& view, const glm::mat4 proj)
+{
 	mat4 modelview = view * modelTransform;
-	
+
 	glUseProgram(shader); // load shader and variables
 	glUniformMatrix4fv(glGetUniformLocation(shader, "uProjectionMatrix"), 1, false, value_ptr(proj));
 	glUniformMatrix4fv(glGetUniformLocation(shader, "uModelViewMatrix"), 1, false, value_ptr(modelview));
@@ -36,10 +37,11 @@ void basic_model::draw(const glm::mat4 &view, const glm::mat4 proj) {
 }
 
 
-Application::Application(GLFWwindow *window) : m_window(window) {
+Application::Application(GLFWwindow* window) : m_window(window)
+{
 
 	shader_builder sb;
-    sb.set_shader(GL_VERTEX_SHADER, CGRA_SRCDIR + std::string("//res//shaders//color_vert.glsl"));
+	sb.set_shader(GL_VERTEX_SHADER, CGRA_SRCDIR + std::string("//res//shaders//color_vert.glsl"));
 	sb.set_shader(GL_FRAGMENT_SHADER, CGRA_SRCDIR + std::string("//res//shaders//color_frag.glsl"));
 	GLuint shader = sb.build();
 
@@ -47,26 +49,30 @@ Application::Application(GLFWwindow *window) : m_window(window) {
 	m_model.color = vec3(1, 0, 0);
 
 	// generate terrain with the default attributes
+
+	m_ng = NoiseGenerator(m_height, m_width);
+
 	updateTerrain();
 }
 
 
 
-void Application::render() {
-	
+void Application::render()
+{
+
 	// retrieve the window hieght
 	int width, height;
-	glfwGetFramebufferSize(m_window, &width, &height); 
+	glfwGetFramebufferSize(m_window, &width, &height);
 
 	m_windowsize = vec2(width, height); // update window size
 	glViewport(0, 0, width, height); // set the viewport to draw to the entire window
 
 	// clear the back-buffer
 	glClearColor(0.3f, 0.3f, 0.4f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// enable flags for normal/forward rendering
-	glEnable(GL_DEPTH_TEST); 
+	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 
 	// projection matrix
@@ -86,11 +92,12 @@ void Application::render() {
 }
 
 
-void Application::renderGUI() {
+void Application::renderGUI()
+{
 
 	// setup window
 	ImGui::SetNextWindowPos(ImVec2(5, 5), ImGuiSetCond_Once);
-	ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiSetCond_Once);
+	ImGui::SetNextWindowSize(ImVec2(300, 300), ImGuiSetCond_Once);
 	ImGui::Begin("Options", 0);
 
 	// helpful drawing options
@@ -103,7 +110,8 @@ void Application::renderGUI() {
 	ImGui::Text("WASD - Move \nQ - Capture/Release Mouse");
 
 	ImGui::Separator();
-	if (ImGui::CollapsingHeader("Camera Settings")) {
+	if (ImGui::CollapsingHeader("Camera Settings"))
+	{
 		ImGui::SliderFloat("Sensitivity", &m_camera.sensitivity, 0, 100, "%.2f");
 		ImGui::SliderFloat("Speed", &m_camera.camera_speed, 0, 100, "%.2f");
 	}
@@ -112,23 +120,33 @@ void Application::renderGUI() {
 	if (ImGui::CollapsingHeader("Terrain Generation Inputs"))
 	{
 		ImGui::SliderInt("octaves", &m_octaves, 2, 10, "%1.0f");
+		ImGui::SliderFloat("amplitude", &m_amplitude, 1, 5, "%0.5f");
 
 		if (ImGui::Button("Update Terrain")) updateTerrain();
+		ImGui::SameLine();
+		if (ImGui::Button("New Seed"))
+		{
+			m_ng.regenerateSeeds();
+			updateTerrain();
+		}
 	}
 	// finish creating window
 	ImGui::End();
 }
 
 
-void Application::cursorPosCallback(double xpos, double ypos) {
-	if (m_captureMouse) {
+void Application::cursorPosCallback(double xpos, double ypos)
+{
+	if (m_captureMouse)
+	{
 		m_camera.Rotate(xpos, ypos, m_windowsize);
 		glfwSetCursorPos(m_window, m_windowsize.x / 2, m_windowsize.y / 2);
 	}
 }
 
 
-void Application::mouseButtonCallback(int button, int action, int mods) {
+void Application::mouseButtonCallback(int button, int action, int mods)
+{
 	(void)mods; // currently un-used
 
 	// capture is left-mouse down
@@ -137,34 +155,42 @@ void Application::mouseButtonCallback(int button, int action, int mods) {
 }
 
 
-void Application::scrollCallback(double xoffset, double yoffset) {
+void Application::scrollCallback(double xoffset, double yoffset)
+{
 	(void)xoffset, (void)yoffset; // currently un-used
 }
 
 
-void Application::keyCallback(int key, int scancode, int action, int mods) {
+void Application::keyCallback(int key, int scancode, int action, int mods)
+{
 	(void)scancode, (void)mods; // currently un-used
 
 	// W Key
-	if (key == 87 && action > 0) {
+	if (key == 87 && action > 0)
+	{
 		m_camera.Move(CameraMove::forward);
 	}
 	// S Key
-	else if (key == 83 && action > 0) {
+	else if (key == 83 && action > 0)
+	{
 		m_camera.Move(CameraMove::backward);
 	}
 	// A Key
-	else if (key == 65 && action > 0) {
+	else if (key == 65 && action > 0)
+	{
 		m_camera.Move(CameraMove::left);
 	}
 	// D Key
-	else if (key == 68 && action > 0) {
+	else if (key == 68 && action > 0)
+	{
 		m_camera.Move(CameraMove::right);
 	}
 
 	// Mouse capture Q
-	if (key == 81 && action == 1) {
-		if (!m_captureMouse) {
+	if (key == 81 && action == 1)
+	{
+		if (!m_captureMouse)
+		{
 			//glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 			m_captureMouse = true;
 		}
@@ -177,57 +203,57 @@ void Application::keyCallback(int key, int scancode, int action, int mods) {
 }
 
 
-void Application::charCallback(unsigned int c) {
+void Application::charCallback(unsigned int c)
+{
 	(void)c; // currently un-used
 }
 
 void Application::updateTerrain()
 {
-	NoiseGenerator ng(70.f);
-	int height = 256, width = 256;
-	noiseMap = ng.GenerateNoiseMap(width, height, m_octaves, 27.6, 0.5, 2);
+
+	noiseMap = m_ng.GenerateNoiseMap(m_octaves, m_amplitude);
 
 	vector<vec3> points;
 
-	for (int j = 0; j < height; j++)
+	for (int j = 0; j < m_height; j++)
 	{
-		for (int i = 0; i < width; i++)
+		for (int i = 0; i < m_width; i++)
 		{
-			float value = ng.getHeight(i, j);
+			float value = m_ng.getHeight(i, j);
 
-			float s = (i / (float)(width - 1));
-			float t = (j / (float)(height - 1));
+			float s = (i / (float)(m_width - 1));
+			float t = (j / (float)(m_height - 1));
 
-			float x = (s * width) - (width / 2);
+			float x = (s * m_width) - (m_width / 2);
 			float y = value;
-			float z = (t * height) - (height / 2);
+			float z = (t * m_height) - (m_height / 2);
 
 			vec3 vertex(x, y, z);
 			points.push_back(vertex);
 		}
 	}
 
-	vector<int> indexBuffer(((width - 1) * (height - 1) * 2) * 3);;
+	vector<int> indexBuffer(((m_width - 1) * (m_height - 1) * 2) * 3);;
 	unsigned int index = 0;
-	for (int j = 0; j < height - 1; j++)
+	for (int j = 0; j < m_height - 1; j++)
 	{
-		for (int i = 0; i < width - 1; i++)
+		for (int i = 0; i < m_width - 1; i++)
 		{
-			int vertexIndex = (j * width) + i;
+			int vertexIndex = (j * m_width) + i;
 
 			// TOP
 			indexBuffer[index++] = vertexIndex;
-			indexBuffer[index++] = vertexIndex + width + 1;
+			indexBuffer[index++] = vertexIndex + m_width + 1;
 			indexBuffer[index++] = vertexIndex + 1;
 
 			// BOTTOM
 			indexBuffer[index++] = vertexIndex;
-			indexBuffer[index++] = vertexIndex + width;
-			indexBuffer[index++] = vertexIndex + width + 1;
+			indexBuffer[index++] = vertexIndex + m_width;
+			indexBuffer[index++] = vertexIndex + m_width + 1;
 		}
 	}
 
-	vector<vec3> normalBuffer(width * height);
+	vector<vec3> normalBuffer(m_width * m_height);
 	for (int i = 0; i < indexBuffer.size(); i += 3)
 	{
 		vec3 v0 = points[indexBuffer[i + 0]];
@@ -251,10 +277,11 @@ void Application::updateTerrain()
 		mb.push_vertex(v);
 		count++;
 	}
-	
+
 	for (int i = 0; i < indexBuffer.size() - 1; i++)
 	{
 		mb.push_index(indexBuffer.at(i));
 	}
 
-	m_model.mesh = mb.build();}
+	m_model.mesh = mb.build();
+}

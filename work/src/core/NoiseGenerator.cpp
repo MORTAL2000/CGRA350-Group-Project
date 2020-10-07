@@ -1,9 +1,7 @@
 #define BILLION 1000000000
-#define LOWRANGE -2
-#define HIGHRANGE 10
+
 
 #include "core/NoiseGenerator.hpp"
-
 #include <glm/gtc/noise.hpp>
 
 #include <iostream>
@@ -12,32 +10,31 @@ using namespace std;
 
 NoiseGenerator::NoiseGenerator(int height, int width) : m_height(height), m_width(width)
 {
-	std::random_device r;
-	std::default_random_engine engine(r());
-	std::uniform_int_distribution<int> uniform_dist(1, BILLION);
+	regenerateSeeds();
 
-	m_seeds.resize(m_width * m_height);
-	for (int i = 0; i < m_width * m_height; i++)	m_seeds[i] = uniform_dist(engine);
+	m_noiseMap.resize(m_width, std::vector<float>(m_height, -1));
 }
 
 NoiseGenerator::NoiseGenerator()
 {
 }
 
-std::vector<std::vector<float>> NoiseGenerator::GenerateNoiseMap(int octaves, float amplitude)
+std::vector<std::vector<float>> NoiseGenerator::GenerateNoiseMap(int octaves, float amplitude, float scale, float persistance)
 {
-	m_noiseMap.resize(m_width, std::vector<float>(m_height, -1));
 
-	float oldMax = -1;
+	float oldMax = 1.73942e+09;
 	float oldMin = BILLION;
+	amplitude *= persistance;
+
+	float HIGHRANGE = 10 * amplitude;
+	float LOWRANGE = -1 * amplitude;
 
 	for (int y = 0; y < m_height; y++)
 	{
 		for (int x = 0; x < m_width; x++)
 		{
 			float noiseHeight = 0.0f;
-			float fscale = 27.6f;
-			float scaleAcc = 0.0f;
+			float fscale = 1;
 
 			float famplitude = amplitude;
 			float frequency = 1.0f;
@@ -61,21 +58,30 @@ std::vector<std::vector<float>> NoiseGenerator::GenerateNoiseMap(int octaves, fl
 				float sampleT = (1.0f - blendX) * m_seeds[nSampleY1 * m_width + nSampleX1] + blendX * m_seeds[nSampleY1 * m_width + nSampleX2];
 				float sampleB = (1.0f - blendX) * m_seeds[nSampleY2 * m_width + nSampleX1] + blendX * m_seeds[nSampleY2 * m_width + nSampleX2];
 
-				scaleAcc += fscale;
 				noiseHeight += (blendY * (sampleB - sampleT) + sampleT) * fscale;
 
-				fscale /= 2.0f;
 
-				float value = (noiseHeight / scaleAcc);
 
-				if (oldMax < value) oldMax = value;
-				if (oldMin > value) oldMin = value;
+				if (oldMax < noiseHeight)
+				{
+					oldMax = noiseHeight;
+				}
+				if (oldMin > noiseHeight)
+				{
+					oldMin = noiseHeight;
+				}
 
 				float oldRange = oldMax - oldMin;
 				float newRange = (HIGHRANGE - LOWRANGE);
-				newValue = (((value - oldMin) * newRange) / oldRange) + LOWRANGE;
+				//newValue = (((noiseHeight - oldMin) * newRange) / oldRange) + LOWRANGE;
 
+				fscale /= 2.0f;
 				newValue *= famplitude;
+				famplitude *= persistance;
+				//frequency *= lacunarity;
+
+				newValue = ((noiseHeight - oldMin) / (oldMax - oldMin)) * (HIGHRANGE - LOWRANGE) + LOWRANGE;
+
 			}
 
 
@@ -84,11 +90,6 @@ std::vector<std::vector<float>> NoiseGenerator::GenerateNoiseMap(int octaves, fl
 	}
 
 	return m_noiseMap;
-}
-
-float NoiseGenerator::getHeight(int x, int y)
-{
-	return m_noiseMap.at(x).at(y);
 }
 
 void NoiseGenerator::regenerateSeeds()

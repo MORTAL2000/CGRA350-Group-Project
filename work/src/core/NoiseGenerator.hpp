@@ -22,9 +22,8 @@ public:
 	NoiseGenerator(int height, int width); // constructor with arguments
 	NoiseGenerator(); // default constructor
 
-	std::vector<std::vector<float>> GenerateNoiseMap(int octaves, float amplitude);
+	std::vector<std::vector<float>> GenerateNoiseMap(int octaves, float amplitude, float scale, float persistance);
 
-	float getHeight(int x, int y);
 
 	void regenerateSeeds();
 };

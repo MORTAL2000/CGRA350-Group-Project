@@ -1,3 +1,10 @@
+#define GLM_ENABLE_EXPERIMENTAL 
+#include <glm/gtx/string_cast.hpp> 
+
+#define BILLION 1000000000
+#define LOWRANGE -2
+#define HIGHRANGE 10
+
 // std
 #include <iostream>
 #include <string>
@@ -17,7 +24,6 @@
 
 #include "core/camera.hpp"
 #include "core/NoiseGenerator.hpp"
-
 
 using namespace std;
 using namespace cgra;
@@ -50,7 +56,10 @@ Application::Application(GLFWwindow* window) : m_window(window)
 
 	// generate terrain with the default attributes
 
-	m_ng = NoiseGenerator(m_height, m_width);
+	m_ng1 = NoiseGenerator(m_height, m_width);
+	m_ng2 = NoiseGenerator(m_height, m_width);
+	m_ng3 = NoiseGenerator(m_height, m_width);
+	noiseMap.resize(m_width, std::vector<float>(m_height, -1)); // set the noiseMap vector to correct size but every value -1
 
 	updateTerrain();
 }
@@ -87,6 +96,18 @@ void Application::render()
 	glPolygonMode(GL_FRONT_AND_BACK, (m_showWireframe) ? GL_LINE : GL_FILL);
 
 
+	updateTerrain();
+
+	// rotate model and bob up and down
+	m_model.modelTransform = rotate(m_model.modelTransform, radians(0.1f), vec3(0, 1, 0));
+
+	if (count >= 0.3) { shouldGoDown = true; }
+	else if (count <= -0.3) { shouldGoDown = false; }
+
+	if (shouldGoDown) { m_model.modelTransform = translate(m_model.modelTransform, vec3(0, count -= 0.001, 0)); }
+	else { m_model.modelTransform = translate(m_model.modelTransform, vec3(0, count += 0.001, 0)); }
+
+
 	// draw the model
 	m_model.draw(view, proj);
 }
@@ -119,15 +140,23 @@ void Application::renderGUI()
 	ImGui::Separator();
 	if (ImGui::CollapsingHeader("Terrain Generation Inputs"))
 	{
-		ImGui::SliderInt("octaves", &m_octaves, 2, 10, "%1.0f");
-		ImGui::SliderFloat("amplitude", &m_amplitude, 1, 5, "%0.5f");
+		if (ImGui::SliderInt("octaves", &m_octaves, 2, 9, "%1.0f"))		m_needsUpdating = true;
+		if (ImGui::SliderFloat("amplitude", &m_amplitude, 1, 5, "%0.5f"))	m_needsUpdating = true;
+		if (ImGui::SliderFloat("scale", &m_scale, 1, 3, "%0.5f"))			m_needsUpdating = true;
+		if (ImGui::SliderFloat("persistance", &m_persistance, 0.5, 1.5, "%0.5f"))	m_needsUpdating = true;
+		if (ImGui::SliderFloat("m_exponent", &m_exponent, 0.1, 2, "%0.5f"))			m_needsUpdating = true;
+		if (ImGui::SliderFloat("bias1", &bias1, 0, 2, "%0.1f"))			m_needsUpdating = true;
+		if (ImGui::SliderFloat("bias2", &bias2, 0, 2, "%0.1f"))			m_needsUpdating = true;
+		if (ImGui::SliderFloat("bias3", &bias3, 0, 2, "%0.1f"))			m_needsUpdating = true;
 
 		if (ImGui::Button("Update Terrain")) updateTerrain();
 		ImGui::SameLine();
 		if (ImGui::Button("New Seed"))
 		{
-			m_ng.regenerateSeeds();
-			updateTerrain();
+			m_ng1.regenerateSeeds();
+			m_ng2.regenerateSeeds();
+			m_ng3.regenerateSeeds();
+			m_needsUpdating = true;
 		}
 	}
 	// finish creating window
@@ -210,78 +239,103 @@ void Application::charCallback(unsigned int c)
 
 void Application::updateTerrain()
 {
-
-	noiseMap = m_ng.GenerateNoiseMap(m_octaves, m_amplitude);
-
-	vector<vec3> points;
-
-	for (int j = 0; j < m_height; j++)
+	if (m_needsUpdating)
 	{
-		for (int i = 0; i < m_width; i++)
+		std::vector<std::vector<float>> noiseMap1 = m_ng1.GenerateNoiseMap(m_octaves, m_amplitude, m_scale, m_persistance);
+		std::vector<std::vector<float>> noiseMap2 = m_ng2.GenerateNoiseMap(m_octaves, m_amplitude, m_scale, m_persistance);
+		std::vector<std::vector<float>> noiseMap3 = m_ng3.GenerateNoiseMap(m_octaves, m_amplitude, m_scale, m_persistance);
+
+		for (int j = 0; j < m_height; j++)
 		{
-			float value = m_ng.getHeight(i, j);
+			for (int i = 0; i < m_width; i++)
+			{
 
-			float s = (i / (float)(m_width - 1));
-			float t = (j / (float)(m_height - 1));
+				int J = floor(j / m_scale);
+				int I = floor(i / m_scale);
 
-			float x = (s * m_width) - (m_width / 2);
-			float y = value;
-			float z = (t * m_height) - (m_height / 2);
+				float value = (noiseMap1.at(J).at(I) * bias1) + (noiseMap2.at(J).at(I) * bias2) + (noiseMap3.at(J).at(I) * bias3);
+				value = pow(value, m_exponent);
 
-			vec3 vertex(x, y, z);
-			points.push_back(vertex);
+				value = (value - (-1.f)) / 2.f;
+				//if(i % 200 == 0)
+				//cout << i<<'/'<<j<<'\t'<<value << endl;
+				noiseMap.at(j).at(i) = value;
+			}
 		}
-	}
 
-	vector<int> indexBuffer(((m_width - 1) * (m_height - 1) * 2) * 3);;
-	unsigned int index = 0;
-	for (int j = 0; j < m_height - 1; j++)
-	{
-		for (int i = 0; i < m_width - 1; i++)
+		//noiseMap = m_ng.GenerateNoiseMap(m_octaves, m_amplitude, m_scale, m_persistance);
+		vector<vec3> points;
+
+		for (int j = 0; j < m_height; j++)
 		{
-			int vertexIndex = (j * m_width) + i;
+			for (int i = 0; i < m_width; i++)
+			{
+				float value = noiseMap.at(j).at(i);
 
-			// TOP
-			indexBuffer[index++] = vertexIndex;
-			indexBuffer[index++] = vertexIndex + m_width + 1;
-			indexBuffer[index++] = vertexIndex + 1;
+				float s = (i / (float)(m_width - 1));
+				float t = (j / (float)(m_height - 1));
 
-			// BOTTOM
-			indexBuffer[index++] = vertexIndex;
-			indexBuffer[index++] = vertexIndex + m_width;
-			indexBuffer[index++] = vertexIndex + m_width + 1;
+				float x = (s * m_width) - (m_width / 2);
+				float y = value;
+				float z = (t * m_height) - (m_height / 2);
+
+				vec3 vertex(x, y, z);
+				points.push_back(vertex);
+			}
 		}
+
+		vector<int> indexBuffer(((m_width - 1) * (m_height - 1) * 2) * 3);;
+		unsigned int index = 0;
+		for (int j = 0; j < m_height - 1; j++)
+		{
+			for (int i = 0; i < m_width - 1; i++)
+			{
+				int vertexIndex = (j * m_width) + i;
+
+				// TOP
+				indexBuffer[index++] = vertexIndex;
+				indexBuffer[index++] = vertexIndex + m_width + 1;
+				indexBuffer[index++] = vertexIndex + 1;
+
+				// BOTTOM
+				indexBuffer[index++] = vertexIndex;
+				indexBuffer[index++] = vertexIndex + m_width;
+				indexBuffer[index++] = vertexIndex + m_width + 1;
+			}
+		}
+
+		vector<vec3> normalBuffer(m_width * m_height);
+		for (int i = 0; i < indexBuffer.size(); i += 3)
+		{
+			vec3 v0 = points[indexBuffer[i + 0]];
+			vec3 v1 = points[indexBuffer[i + 1]];
+			vec3 v2 = points[indexBuffer[i + 2]];
+
+			vec3 normal = normalize(cross(v1 - v0, v2 - v0));
+
+			normalBuffer[indexBuffer[i + 0]] += normal;
+			normalBuffer[indexBuffer[i + 1]] += normal;
+			normalBuffer[indexBuffer[i + 2]] += normal;
+		}
+
+		mesh_builder mb;
+		unsigned int count = 0;
+		for (vec3 point : points)
+		{
+			mesh_vertex v;
+			v.pos = point;
+			v.norm = normalBuffer[count];
+			mb.push_vertex(v);
+			count++;
+		}
+
+		for (int i = 0; i < indexBuffer.size() - 1; i++)
+		{
+			mb.push_index(indexBuffer.at(i));
+		}
+
+		m_model.mesh = mb.build();
+
+		m_needsUpdating = false;
 	}
-
-	vector<vec3> normalBuffer(m_width * m_height);
-	for (int i = 0; i < indexBuffer.size(); i += 3)
-	{
-		vec3 v0 = points[indexBuffer[i + 0]];
-		vec3 v1 = points[indexBuffer[i + 1]];
-		vec3 v2 = points[indexBuffer[i + 2]];
-
-		vec3 normal = normalize(cross(v1 - v0, v2 - v0));
-
-		normalBuffer[indexBuffer[i + 0]] += normal;
-		normalBuffer[indexBuffer[i + 1]] += normal;
-		normalBuffer[indexBuffer[i + 2]] += normal;
-	}
-
-	mesh_builder mb;
-	unsigned int count = 0;
-	for (vec3 point : points)
-	{
-		mesh_vertex v;
-		v.pos = point;
-		v.norm = normalBuffer[count];
-		mb.push_vertex(v);
-		count++;
-	}
-
-	for (int i = 0; i < indexBuffer.size() - 1; i++)
-	{
-		mb.push_index(indexBuffer.at(i));
-	}
-
-	m_model.mesh = mb.build();
 }

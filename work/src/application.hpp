@@ -20,6 +20,7 @@
 struct basic_model
 {
 	GLuint shader = 0;
+	GLuint depthshader = 0;
 	cgra::gl_mesh mesh;
 	glm::vec3 color{ 0.7 };
 	glm::mat4 modelTransform{ 1.0 };
@@ -70,6 +71,21 @@ private:
 	//rendering
 	bool shouldGoDown = true;
 	bool m_needsUpdating = true;
+
+
+	// shadows
+	GLuint Shader;
+	GLuint DepthShader;
+
+	GLuint FrameBuffer = 0;
+	GLuint depthTex;
+
+	GLuint depthMatrixID;
+	GLuint MatrixID;
+	GLuint DepthBiasID;
+	GLuint ShadowMapID;
+	const unsigned int map_size = 2048; // shadow map width and height
+	basic_model teapot; // for testing
 
 public:
 	// setup

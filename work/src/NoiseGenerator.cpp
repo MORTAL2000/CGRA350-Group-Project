@@ -1,7 +1,7 @@
 #define BILLION 1000000000
 
+#include "NoiseGenerator.hpp"
 
-#include "core/NoiseGenerator.hpp"
 #include <glm/gtc/noise.hpp>
 
 #include <iostream>

@@ -10,7 +10,7 @@
 #include "cgra/cgra_mesh.hpp"
 #include "skeleton_model.hpp"
 #include "core/camera.hpp"
-#include "core/NoiseGenerator.hpp"
+#include "NoiseGenerator.hpp"
 
 #include <vector>
 
@@ -57,9 +57,8 @@ private:
 	std::vector<std::vector<float>> noiseMap;
 	int m_octaves = 4;
 	float m_amplitude = 2.f;
-	float m_scale = 2.f;
+	float m_scale = 1.f;
 	float m_persistance = 1;
-	float m_lacunarity = 0.5;
 	float m_exponent = 1.0f;
 	float bias1 = 1.0f, bias2 = 1.5f, bias3 = 0.15f;
 

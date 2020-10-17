@@ -22,9 +22,6 @@
 #include "cgra/cgra_shader.hpp"
 #include "cgra/cgra_wavefront.hpp"
 
-#include "core/camera.hpp"
-#include "core/NoiseGenerator.hpp"
-
 using namespace std;
 using namespace cgra;
 using namespace glm;
@@ -68,7 +65,6 @@ Application::Application(GLFWwindow* window) : m_window(window)
 
 void Application::render()
 {
-
 	// retrieve the window hieght
 	int width, height;
 	glfwGetFramebufferSize(m_window, &width, &height);
@@ -94,7 +90,6 @@ void Application::render()
 	if (m_show_grid) drawGrid(view, proj);
 	if (m_show_axis) drawAxis(view, proj);
 	glPolygonMode(GL_FRONT_AND_BACK, (m_showWireframe) ? GL_LINE : GL_FILL);
-
 
 	updateTerrain();
 
@@ -149,7 +144,6 @@ void Application::renderGUI()
 		if (ImGui::SliderFloat("bias2", &bias2, 0, 2, "%0.1f"))			m_needsUpdating = true;
 		if (ImGui::SliderFloat("bias3", &bias3, 0, 2, "%0.1f"))			m_needsUpdating = true;
 
-		if (ImGui::Button("Update Terrain")) updateTerrain();
 		ImGui::SameLine();
 		if (ImGui::Button("New Seed"))
 		{

@@ -36,10 +36,9 @@ std::vector<std::vector<float>> NoiseGenerator::GenerateNoiseMap(int octaves, fl
 			float noiseHeight = 0.0f;
 			float fscale = 1;
 
-			float famplitude = amplitude;
 			float frequency = 1.0f;
 
-			float newValue = -1;
+			float value = -1;
 
 			for (int i = 0; i < octaves; i++)
 			{
@@ -60,8 +59,6 @@ std::vector<std::vector<float>> NoiseGenerator::GenerateNoiseMap(int octaves, fl
 
 				noiseHeight += (blendY * (sampleB - sampleT) + sampleT) * fscale;
 
-
-
 				if (oldMax < noiseHeight)
 				{
 					oldMax = noiseHeight;
@@ -73,19 +70,16 @@ std::vector<std::vector<float>> NoiseGenerator::GenerateNoiseMap(int octaves, fl
 
 				float oldRange = oldMax - oldMin;
 				float newRange = (HIGHRANGE - LOWRANGE);
-				//newValue = (((noiseHeight - oldMin) * newRange) / oldRange) + LOWRANGE;
 
 				fscale /= 2.0f;
-				newValue *= famplitude;
-				famplitude *= persistance;
-				//frequency *= lacunarity;
+				value *= amplitude;
+				amplitude *= persistance;
 
-				newValue = ((noiseHeight - oldMin) / (oldMax - oldMin)) * (HIGHRANGE - LOWRANGE) + LOWRANGE;
+				value = ((noiseHeight - oldMin) / (oldMax - oldMin)) * (HIGHRANGE - LOWRANGE) + LOWRANGE;
 
 			}
 
-
-			m_noiseMap.at(x).at(y) = newValue;
+			m_noiseMap.at(x).at(y) = value;
 		}
 	}
 

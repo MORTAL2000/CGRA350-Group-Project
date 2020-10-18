@@ -1,5 +1,8 @@
 
 #pragma once
+// std
+#include <vector>
+#include <chrono>
 
 // glm
 #include <glm/glm.hpp>
@@ -10,9 +13,7 @@
 #include "cgra/cgra_mesh.hpp"
 #include "skeleton_model.hpp"
 #include "core/camera.hpp"
-#include "NoiseGenerator.hpp"
-
-#include <vector>
+#include "core/NoiseGenerator.hpp"
 
 // Basic model that holds the shader, mesh and transform for drawing.
 // Can be copied and modified for adding in extra information for drawing
@@ -60,7 +61,7 @@ private:
 	float m_scale = 1.f;
 	float m_persistance = 1;
 	float m_exponent = 1.0f;
-	float bias1 = 1.0f, bias2 = 1.5f, bias3 = 0.15f;
+	float bias1 = 1.5f, bias2 = 1.0f, bias3 = 0.15f;
 
 	int m_height = 256, m_width = 256;
 	NoiseGenerator m_ng1, m_ng2, m_ng3;
@@ -69,6 +70,7 @@ private:
 	//rendering
 	bool shouldGoDown = true;
 	bool m_needsUpdating = true;
+	std::chrono::high_resolution_clock::time_point timeStart = std::chrono::high_resolution_clock::now();
 
 public:
 	// setup

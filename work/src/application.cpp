@@ -1,21 +1,14 @@
-#define GLM_ENABLE_EXPERIMENTAL 
-#include <glm/gtx/string_cast.hpp> 
-
-#define BILLION 1000000000
-#define LOWRANGE -2
-#define HIGHRANGE 10
+#include "application.hpp"
 
 // std
 #include <iostream>
 #include <string>
-#include <chrono>
 
 // glm
 #include <glm/gtc/constants.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 // project
-#include "application.hpp"
 #include "cgra/cgra_geometry.hpp"
 #include "cgra/cgra_gui.hpp"
 #include "cgra/cgra_image.hpp"
@@ -57,7 +50,6 @@ Application::Application(GLFWwindow* window) : m_window(window)
 	m_ng2 = NoiseGenerator(m_height, m_width);
 	m_ng3 = NoiseGenerator(m_height, m_width);
 	noiseMap.resize(m_width, std::vector<float>(m_height, -1)); // set the noiseMap vector to correct size but every value -1
-
 	updateTerrain();
 }
 
@@ -91,7 +83,15 @@ void Application::render()
 	if (m_show_axis) drawAxis(view, proj);
 	glPolygonMode(GL_FRONT_AND_BACK, (m_showWireframe) ? GL_LINE : GL_FILL);
 
-	updateTerrain();
+	chrono::high_resolution_clock::time_point timeCurrent = chrono::high_resolution_clock::now();
+	chrono::duration<double, std::milli> time = timeCurrent - timeStart;
+
+	if (time.count() >= 100)
+	{
+		timeStart = chrono::high_resolution_clock::now();
+		updateTerrain();
+		cout << "second" << endl;
+	}
 
 	// rotate model and bob up and down
 	m_model.modelTransform = rotate(m_model.modelTransform, radians(0.1f), vec3(0, 1, 0));
@@ -140,11 +140,10 @@ void Application::renderGUI()
 		if (ImGui::SliderFloat("scale", &m_scale, 1, 3, "%0.5f"))			m_needsUpdating = true;
 		if (ImGui::SliderFloat("persistance", &m_persistance, 0.5, 1.5, "%0.5f"))	m_needsUpdating = true;
 		if (ImGui::SliderFloat("m_exponent", &m_exponent, 0.1, 2, "%0.5f"))			m_needsUpdating = true;
-		if (ImGui::SliderFloat("bias1", &bias1, 0, 2, "%0.1f"))			m_needsUpdating = true;
-		if (ImGui::SliderFloat("bias2", &bias2, 0, 2, "%0.1f"))			m_needsUpdating = true;
-		if (ImGui::SliderFloat("bias3", &bias3, 0, 2, "%0.1f"))			m_needsUpdating = true;
+		if (ImGui::SliderFloat("bias1", &bias1, 0, 2, "%0.5f"))			m_needsUpdating = true;
+		if (ImGui::SliderFloat("bias2", &bias2, 0, 2, "%0.5f"))			m_needsUpdating = true;
+		if (ImGui::SliderFloat("bias3", &bias3, 0, 2, "%0.5f"))			m_needsUpdating = true;
 
-		ImGui::SameLine();
 		if (ImGui::Button("New Seed"))
 		{
 			m_ng1.regenerateSeeds();

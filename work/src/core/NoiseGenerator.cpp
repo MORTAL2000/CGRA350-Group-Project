@@ -1,11 +1,8 @@
-#define BILLION 1000000000
-
 #include "NoiseGenerator.hpp"
 
-#include <glm/gtc/noise.hpp>
-
-#include <iostream>
+// std
 #include <random>
+
 using namespace std;
 
 NoiseGenerator::NoiseGenerator(int height, int width) : m_height(height), m_width(width)
@@ -22,8 +19,8 @@ NoiseGenerator::NoiseGenerator()
 std::vector<std::vector<float>> NoiseGenerator::GenerateNoiseMap(int octaves, float amplitude, float scale, float persistance)
 {
 
-	float oldMax = 1.73942e+09;
-	float oldMin = BILLION;
+	float oldMax = 1.0e+09;
+	float oldMin = 1.0e+09;
 	amplitude *= persistance;
 
 	float HIGHRANGE = 10 * amplitude;
@@ -90,7 +87,7 @@ void NoiseGenerator::regenerateSeeds()
 {
 	std::random_device r;
 	std::default_random_engine engine(r());
-	std::uniform_int_distribution<int> uniform_dist(1, BILLION);
+	std::uniform_int_distribution<int> uniform_dist(1, 1.0e+09);
 
 	m_seeds.resize(m_width * m_height);
 	for (int i = 0; i < m_width * m_height; i++)	m_seeds[i] = uniform_dist(engine);

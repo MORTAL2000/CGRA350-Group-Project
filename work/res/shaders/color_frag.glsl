@@ -6,7 +6,7 @@ uniform mat4 uModelViewMatrix;
 uniform vec3 uColor;
 
 // viewspace data (this must match the output of the fragment shader)
-in VertexData {
+in VertexData{
 	vec3 position;
 	vec3 normal;
 	vec2 textureCoord;

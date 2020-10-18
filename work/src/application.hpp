@@ -1,5 +1,5 @@
-
 #pragma once
+
 // std
 #include <vector>
 #include <chrono>
@@ -52,24 +52,34 @@ private:
 	bool m_showWireframe = false;
 
 	// geometry
-	basic_model m_model;
+	basic_model m_terrain;
+	basic_model m_water;
 
-	// terrain generation
+	// Terrain Properties
 	std::vector<std::vector<float>> noiseMap;
+	std::vector<std::vector<float>> waterMap;
+
 	int m_octaves = 4;
-	float m_amplitude = 2.f;
+	float m_amplitude = 3.f;
 	float m_scale = 1.f;
 	float m_persistance = 1;
-	float m_exponent = 1.0f;
+	float m_exponent = 1.f;
+	// Weight that each heightmap should carry
 	float bias1 = 1.5f, bias2 = 1.0f, bias3 = 0.15f;
 
+	// Height and Width of map - Should be the same number (should make a square)
 	int m_height = 256, m_width = 256;
-	NoiseGenerator m_ng1, m_ng2, m_ng3;
-	float count = 0;
 
-	//rendering
-	bool shouldGoDown = true;
-	bool m_needsUpdating = true;
+	// Actual Noise Generator objects that creates the noise height maps
+	NoiseGenerator m_terrainMap1, m_terrainMap2, m_waterMap;
+
+	// Rendering
+	bool m_needsUpdating = true; // if the model should be updated (changing values on the heightmap) - changing actual position of the mesh should not enable this
+	bool shouldGoDown = true; // for bobbing the model mesh up and down
+	float bobbingCount = 0; // keeps track of when to switch between up and down when bobbing
+
+	// Time
+	// only update the mesh once every 0.1 seconds (can be changed)
 	std::chrono::high_resolution_clock::time_point timeStart = std::chrono::high_resolution_clock::now();
 
 public:
@@ -93,4 +103,7 @@ public:
 
 	// terrain generation
 	void updateTerrain();
+
+	// update mesh
+	void updateMesh(basic_model &model, std::vector<std::vector<float>> map);
 };

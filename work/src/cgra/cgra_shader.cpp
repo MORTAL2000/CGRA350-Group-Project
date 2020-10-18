@@ -170,7 +170,7 @@ namespace cgra {
 		GLint link_status;
 		glGetProgramiv(program, GL_LINK_STATUS, &link_status);
 		printProgramInfoLog(program); // print warnings and errors
-		if (!link_status) throw shader_link_error();
+		//if (!link_status) throw shader_link_error();
 
 		return program;
 	}

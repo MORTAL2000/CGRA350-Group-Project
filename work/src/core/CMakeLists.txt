@@ -4,6 +4,9 @@ set(sources
 	"camera.hpp"
 	"camera.cpp"
 
+	"NoiseGenerator.hpp"
+	"NoiseGenerator.cpp"
+
 	"CMakeLists.txt"
 )
 

@@ -100,7 +100,7 @@ void Application::renderGUI() {
 	ImGui::Checkbox("Wireframe", &m_showWireframe);
 	ImGui::SameLine();
 	if (ImGui::Button("Screenshot")) rgba_image::screenshot(true);
-	ImGui::Text("WASD - Move \nQ - Capture/Release Mouse");
+	ImGui::Text("WASD - Move \nSpacebar/Shift - Ascend/Descend \nQ - Capture/Release Mouse");
 
 	ImGui::Separator();
 	if (ImGui::CollapsingHeader("Camera Settings")) {
@@ -160,6 +160,14 @@ void Application::keyCallback(int key, int scancode, int action, int mods) {
 	// D Key
 	else if (key == 68 && action > 0) {
 		m_camera.Move(CameraMove::right);
+	}
+	// Shift Key
+	else if (key == GLFW_KEY_LEFT_SHIFT && action > 0) {
+		m_camera.Move(CameraMove::descend);
+	}
+	// Space Key
+	else if (key == GLFW_KEY_SPACE && action > 0) {
+		m_camera.Move(CameraMove::ascend);
 	}
 
 	// Mouse capture Q

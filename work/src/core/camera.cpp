@@ -66,6 +66,12 @@ void Camera::Move(CameraMove dir)
 	case CameraMove::right:
 		m_cameraPos += normalize(cross(m_cameraFront, m_cameraUp)) * (camera_speed * m_deltaTime);
 		break;
+	case CameraMove::ascend:
+		m_cameraPos += (camera_speed * m_deltaTime) * vec3(0, 1, 0);
+		break;
+	case CameraMove::descend:
+		m_cameraPos -= (camera_speed * m_deltaTime) * vec3(0, 1, 0);
+		break;
 	default:
 		break;
 	}

@@ -8,7 +8,7 @@
 #include "opengl.hpp"
 
 enum class CameraMove {
-	forward, backward, left, right
+	forward, backward, left, right, ascend, descend
 };
 
 

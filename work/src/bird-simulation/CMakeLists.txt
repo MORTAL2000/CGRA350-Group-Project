@@ -4,6 +4,9 @@ set(sources
 	"boids.hpp"
 	"boids.cpp"
 
+	"boids_renderer.hpp"
+	"boids_renderer.cpp"
+
 	"CMakeLists.txt"
 )
 

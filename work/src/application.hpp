@@ -6,11 +6,13 @@
 #include <glm/gtc/type_ptr.hpp>
 
 // project
-#include "bird-simulation/boids_renderer.hpp"
 #include "opengl.hpp"
 #include "cgra/cgra_mesh.hpp"
 #include "skeleton_model.hpp"
 #include "core/camera.hpp"
+
+// bird-simulation
+#include "bird-simulation/boids_model.hpp"
 
 
 // Basic model that holds the shader, mesh and transform for drawing.
@@ -50,7 +52,8 @@ private:
 	// geometry
 	basic_model m_model;
 
-	BoidsRenderer m_boidsRenderer;
+	// bird simulation
+	boids_model boids_model_;
 
 	// terrain generation
 	std::vector<std::vector<float>> noiseMap;

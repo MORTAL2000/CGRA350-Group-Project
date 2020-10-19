@@ -2,18 +2,26 @@
 
 // std
 #include <random>
+#include <iostream>
 
 using namespace std;
 
 NoiseGenerator::NoiseGenerator(int height, int width) : m_height(height), m_width(width)
 {
 	regenerateSeeds();
+	cout << "created objected! " << endl;
 
 	m_noiseMap.resize(m_width, std::vector<float>(m_height, -1));
 }
 
 NoiseGenerator::NoiseGenerator()
 {
+	this->~NoiseGenerator();
+}
+
+NoiseGenerator::~NoiseGenerator()
+{
+	cout << "destroyed object! " << this << endl;
 }
 
 std::vector<std::vector<float>> NoiseGenerator::GenerateNoiseMap(int octaves, float amplitude, float scale, float persistance)

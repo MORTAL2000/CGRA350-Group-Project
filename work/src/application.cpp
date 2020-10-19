@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC  
+#include <stdlib.h>  
+#include <crtdbg.h>  
+
 #include "application.hpp"
 
 // std
@@ -39,16 +43,9 @@ Application::Application(GLFWwindow* window) : m_window(window)
 	sb.set_shader(GL_FRAGMENT_SHADER, CGRA_SRCDIR + std::string("//res//shaders//color_frag.glsl"));
 	GLuint shader = sb.build();
 
+	// both meshes have same shader
 	m_terrain.shader = shader;
-	m_terrain.color = vec3(1, 0, 0);
-
-
-	shader_builder water;
-
-	water.set_shader(GL_VERTEX_SHADER, CGRA_SRCDIR + std::string("//res//shaders//water_vert.glsl"));
-	water.set_shader(GL_FRAGMENT_SHADER, CGRA_SRCDIR + std::string("//res//shaders//color_frag.glsl"));
-	GLuint shaderWater = water.build();
-	m_water.shader = shaderWater;
+	m_water.shader = shader; // i do some checks later to give it a really cool box effect tho
 
 	// generate terrain with the default attributes
 
@@ -57,9 +54,28 @@ Application::Application(GLFWwindow* window) : m_window(window)
 	m_waterMap = NoiseGenerator(m_height, m_width);
 	waterMap.resize(m_width, std::vector<float>(m_height, 20));
 	noiseMap.resize(m_width, std::vector<float>(m_height, -1)); // set the noiseMap vector to correct size but initialse every value -1
+
+	indexBuffer.resize(((m_width - 1) * (m_height - 1) * 2) * 3);
+	unsigned int index = 0;
+	for (int j = 0; j < m_height - 1; j++)
+	{
+		for (int i = 0; i < m_width - 1; i++)
+		{
+			int vertexIndex = (j * m_width) + i;
+
+			// TOP
+			indexBuffer[index++] = vertexIndex;
+			indexBuffer[index++] = vertexIndex + m_width + 1;
+			indexBuffer[index++] = vertexIndex + 1;
+
+			// BOTTOM
+			indexBuffer[index++] = vertexIndex;
+			indexBuffer[index++] = vertexIndex + m_width;
+			indexBuffer[index++] = vertexIndex + m_width + 1;
+		}
+	}
+
 	updateTerrain();
-
-
 	updateMesh(m_water, waterMap);
 }
 
@@ -156,7 +172,7 @@ void Application::renderGUI()
 		if (ImGui::SliderFloat("amplitude", &m_amplitude, 1, 5, "%0.5f"))	m_needsUpdating = true;
 		if (ImGui::SliderFloat("scale", &m_scale, 1, 3, "%0.5f"))			m_needsUpdating = true;
 		if (ImGui::SliderFloat("persistance", &m_persistance, 0.5, 1.5, "%0.5f"))	m_needsUpdating = true;
-		if (ImGui::SliderFloat("m_exponent", &m_exponent, 0.1, 2, "%0.5f"))			m_needsUpdating = true;
+		if (ImGui::SliderFloat("m_exponent", &m_exponent, 0.5, 1.5, "%0.5f"))			m_needsUpdating = true;
 		if (ImGui::SliderFloat("Base Bias", &bias1, 0, 2, "%0.5f"))			m_needsUpdating = true;
 		if (ImGui::SliderFloat("Secondary Bias", &bias2, 0, 2, "%0.5f"))			m_needsUpdating = true;
 		//if (ImGui::SliderFloat("Water", &bias3, 0, 2, "%0.5f"))			m_needsUpdating = true;
@@ -180,6 +196,7 @@ void Application::updateTerrain()
 		std::vector<std::vector<float>> noiseMap1 = m_terrainMap1.GenerateNoiseMap(m_octaves, m_amplitude, m_scale, m_persistance);
 		std::vector<std::vector<float>> noiseMap2 = m_terrainMap2.GenerateNoiseMap(m_octaves, m_amplitude, m_scale, m_persistance);
 
+
 		for (int j = 0; j < m_height; j++)
 		{
 			for (int i = 0; i < m_width; i++)
@@ -190,15 +207,33 @@ void Application::updateTerrain()
 				float value = (noiseMap1.at(J).at(I) * bias1) + (noiseMap2.at(J).at(I) * bias2);
 				value = pow(value, m_exponent);
 
-				//value = (value - (-1.f)) / 2.f;
 				noiseMap.at(j).at(i) = value;
+			}
+		}
 
-
-
+		for (int j = 0; j < m_height - 1; j++)
+		{
+			for (int i = 0; i < m_width - 1; i++)
+			{
+				if (j == 0 || i == 0) {
+					waterMap[j][i] = 20;
+				}
+				else {
+					float compare = noiseMap[j][i];
+					if (compare >= 20) {
+						waterMap[j][i] = compare - 0.1;
+					}
+					else {
+						waterMap[j][i] = 20;
+					}
+				}
 			}
 		}
 
 		updateMesh(m_terrain, noiseMap);
+		updateMesh(m_water, waterMap);
+
+
 		m_needsUpdating = false;
 	}
 }
@@ -223,26 +258,6 @@ void Application::updateMesh(basic_model& model, std::vector<std::vector<float>>
 
 			vec3 vertex(x, y, z);
 			points.push_back(vertex);
-		}
-	}
-
-	vector<int> indexBuffer(((m_width - 1) * (m_height - 1) * 2) * 3);;
-	unsigned int index = 0;
-	for (int j = 0; j < m_height - 1; j++)
-	{
-		for (int i = 0; i < m_width - 1; i++)
-		{
-			int vertexIndex = (j * m_width) + i;
-
-			// TOP
-			indexBuffer[index++] = vertexIndex;
-			indexBuffer[index++] = vertexIndex + m_width + 1;
-			indexBuffer[index++] = vertexIndex + 1;
-
-			// BOTTOM
-			indexBuffer[index++] = vertexIndex;
-			indexBuffer[index++] = vertexIndex + m_width;
-			indexBuffer[index++] = vertexIndex + m_width + 1;
 		}
 	}
 

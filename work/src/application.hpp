@@ -58,6 +58,7 @@ private:
 	// Terrain Properties
 	std::vector<std::vector<float>> noiseMap;
 	std::vector<std::vector<float>> waterMap;
+	std::vector<int> indexBuffer;
 
 	int m_octaves = 4;
 	float m_amplitude = 3.f;

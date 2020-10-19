@@ -17,6 +17,7 @@ private:
 public:
 	NoiseGenerator(int height, int width); // constructor with arguments
 	NoiseGenerator(); // default constructor
+	~NoiseGenerator();
 
 	std::vector<std::vector<float>> GenerateNoiseMap(int octaves, float amplitude, float scale, float persistance);
 

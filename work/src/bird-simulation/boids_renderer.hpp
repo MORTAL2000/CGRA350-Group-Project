@@ -42,6 +42,14 @@ namespace blukzen
     public:
         vector<boid> boids; // Boids array
         vector<flock> flocks;
+
+        float alignment_weight = 0.5;
+        float cohesion_weight = 0.7;
+        float separate_weight = 1;
+        float target_height_weight = 1;
+        float desired_height = 100;
+        float max_speed = 0.6;
+        float max_force = 0.1;
         
         boids_renderer();
         ~boids_renderer();

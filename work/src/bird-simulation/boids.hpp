@@ -11,9 +11,9 @@
 #include "opengl.hpp"
 
 /**
- *
- *
- */
+*
+*
+*/
 struct bounds
 {
     glm::vec3 max;
@@ -41,11 +41,11 @@ public:
         glm::vec3(-horizontal_bounds, floor_height, -horizontal_bounds)
     };
     
-    const float alignment_weight = 0.5;//0.15;
-    const float cohesion_weight = 0.7;//0.15;
-    const float separate_weight = 1;//0.3;
-    const float wall_avoidance_weight = 1;//0.2;
-    const float target_height_weight = 1;//0.9;
+    float alignment_weight = 0.5;
+    float cohesion_weight = 0.7;
+    float separate_weight = 1;
+    float wall_avoidance_weight = 1;
+    float target_height_weight = 1;
 
     float m_deltaTime = 0.0f;
     float m_lastFrame = 0.0f;

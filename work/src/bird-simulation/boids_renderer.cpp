@@ -22,14 +22,6 @@ blukzen::boids_renderer::boids_renderer()
 {
     model_.load_model(CGRA_SRCDIR + std::string("//res//assets//bird.dae"));
 
-    // boids.resize(5);
-    // for (boid &boid : boids)
-    // {
-    //     boid.position = vec3(rand() % 10 + 20, rand() % 100 + 25, rand() % 10 + 20);
-    //     boid.velocity = vec3(rand() % 2 - 1 * (boid.max_speed/2), 0, rand() % 2 - 1 * (boid.max_speed/2));
-    //     cout << "Spawned boid at " << boid.position.x << ", " << boid.position.y << ", " << boid.position.z << endl;
-    // }
-
     target_position_ = vec3(rand() % 10 + 20, rand() % 40 + 10, rand() % 10 + 20);
 
     flocks.resize(initial_flocks);
@@ -74,14 +66,6 @@ void blukzen::boids_renderer::render_boids(const mat4& view, const mat4 proj)
             transform = mat4(1);
         }
     }
-    
-    /*for (boid &boid : boids)
-    {
-        transform = translate(transform, boid.position) * orientation(normalize(boid.velocity), vec3(0, 0, 1));
-        model_.draw(view * transform, proj);
-        
-        transform = mat4(1);
-    }*/
 }
 
 void blukzen::boids_renderer::update_boids()
@@ -90,6 +74,14 @@ void blukzen::boids_renderer::update_boids()
     {
         for (boid &boid : flock.boids)
         {
+            // TODO: Move parameter updates to an event.
+            boid.alignment_weight = alignment_weight;
+            boid.cohesion_weight = cohesion_weight;
+            boid.separate_weight = separate_weight;
+            boid.target_height_weight = target_height_weight;
+            boid.max_speed = max_speed;
+            boid.max_force = max_force;
+            boid.desired_height = desired_height;
             boid.update(flock.boids, m_deltaTime);
             boid.move();
         }

@@ -19,6 +19,8 @@
 #include "cgra/cgra_shader.hpp"
 #include "cgra/cgra_wavefront.hpp"
 
+#include "bird-simulation/boids_renderer.hpp"
+
 using namespace std;
 using namespace cgra;
 using namespace glm;
@@ -237,6 +239,7 @@ void Application::render()
 	// draw the model
 	m_terrain.draw(view, proj);
 	m_water.draw(view, proj);
+	boids_renderer_.update(view, proj);
 }
 
 
@@ -288,6 +291,20 @@ void Application::renderGUI()
 
 	if (ImGui::CollapsingHeader("Shadowing")) {
 		ImGui::Checkbox("Turn on Shadowing", &m_shadowed);
+	}
+
+	if (ImGui::CollapsingHeader("Birds"))
+	{
+		ImGui::Text("Boids Weights");
+		ImGui::InputFloat("Alignment", &boids_renderer_.alignment_weight);
+		ImGui::InputFloat("Cohesion", &boids_renderer_.cohesion_weight);
+		ImGui::InputFloat("Separation", &boids_renderer_.separate_weight);
+		ImGui::InputFloat("Target Height", &boids_renderer_.target_height_weight);
+		ImGui::Separator();
+		ImGui::Text("Boids Properties");
+		ImGui::InputFloat("Desired Height", &boids_renderer_.desired_height);
+		ImGui::InputFloat("Max Speed", &boids_renderer_.max_speed);
+		ImGui::InputFloat("Max Force", &boids_renderer_.max_force);
 	}
 	// finish creating window
 	ImGui::End();

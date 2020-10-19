@@ -12,6 +12,7 @@
 #include "opengl.hpp"
 #include "cgra/cgra_mesh.hpp"
 #include "skeleton_model.hpp"
+#include "bird-simulation/boids_renderer.hpp"
 #include "core/camera.hpp"
 #include "core/NoiseGenerator.hpp"
 
@@ -99,6 +100,9 @@ private:
 	const unsigned int map_size = 2048; // shadow map width and height
 
 	bool m_shadowed = true;
+
+	// birds
+	blukzen::boids_renderer boids_renderer_;
 
 public:
 	// setup

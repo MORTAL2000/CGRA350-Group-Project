@@ -1,9 +1,10 @@
 #version 330 core
 
 // uniform data
+// uniform data
 uniform mat4 uProjectionMatrix;
 uniform mat4 uModelViewMatrix;
-uniform vec3 uColor;
+//uniform vec3 uColor;
 
 // mesh data
 layout(location = 0) in vec3 aPosition;
@@ -11,18 +12,26 @@ layout(location = 1) in vec3 aNormal;
 layout(location = 2) in vec2 aTexCoord;
 
 // model data (this must match the input of the vertex shader)
-out VertexData{
+out VertexData {
 	vec3 position;
 	vec3 normal;
 	vec2 textureCoord;
 } v_out;
 out vec3 vertexColor;
 
+uniform mat4 MVP; // proj * view * model
+uniform mat4 DepthBiasMVP;
+
+out vec4 shadowCoord;
+
 void main() {
-	// transform vertex data to viewspace
-	v_out.position = (uModelViewMatrix * vec4(aPosition, 1)).xyz;
-	v_out.normal = normalize((uModelViewMatrix * vec4(aNormal, 0)).xyz);
+	v_out.position = (MVP * vec4(aPosition, 1)).xyz;
+	v_out.normal = normalize((MVP * vec4(aNormal, 0)).xyz);
 	v_out.textureCoord = aTexCoord;
+
+	gl_Position = MVP * vec4(aPosition, 1);
+	shadowCoord = DepthBiasMVP * vec4(aPosition, 1);
+
 
 	if (aPosition.y >= 50) //snow
 	{
@@ -44,6 +53,5 @@ void main() {
 	{
 		vertexColor = vec3(67.f / 255, 115.f / 255, 208.f / 255);
 	}
-	// set the screenspace position (needed for converting to fragment data)
-	gl_Position = uProjectionMatrix * uModelViewMatrix * vec4(aPosition, 1);
 }
+

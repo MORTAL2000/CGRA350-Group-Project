@@ -28,10 +28,10 @@ void basic_model::draw(const glm::mat4& view, const glm::mat4 proj)
 {
 	mat4 modelview = view * modelTransform;
 
-	glUseProgram(shader); // load shader and variables
+	//glUseProgram(shader); // load shader and variables
 	glUniformMatrix4fv(glGetUniformLocation(shader, "uProjectionMatrix"), 1, false, value_ptr(proj));
 	glUniformMatrix4fv(glGetUniformLocation(shader, "uModelViewMatrix"), 1, false, value_ptr(modelview));
-	glUniform3fv(glGetUniformLocation(shader, "uColor"), 1, value_ptr(color));
+	//glUniform3fv(glGetUniformLocation(shader, "uColor"), 1, value_ptr(color));
 
 	mesh.draw(); // draw
 }
@@ -39,8 +39,15 @@ void basic_model::draw(const glm::mat4& view, const glm::mat4 proj)
 Application::Application(GLFWwindow* window) : m_window(window)
 {
 	shader_builder sb;
+	shader_builder depth;
+	depth.set_shader(GL_VERTEX_SHADER, CGRA_SRCDIR + std::string("//res//shaders//shadow_vert.glsl"));
+	depth.set_shader(GL_FRAGMENT_SHADER, CGRA_SRCDIR + std::string("//res//shaders//shadow_frag.glsl"));
 	sb.set_shader(GL_VERTEX_SHADER, CGRA_SRCDIR + std::string("//res//shaders//color_vert.glsl"));
 	sb.set_shader(GL_FRAGMENT_SHADER, CGRA_SRCDIR + std::string("//res//shaders//color_frag.glsl"));
+
+	DepthShader = depth.build();
+	Shader = sb.build();
+
 	GLuint shader = sb.build();
 
 	// both meshes have same shader
@@ -77,7 +84,42 @@ Application::Application(GLFWwindow* window) : m_window(window)
 
 	updateTerrain();
 	updateMesh(m_water, waterMap);
+
+	initialiseBuffers();
 }
+
+void Application::initialiseBuffers() {	// set up buffers for shadows
+
+	glGenFramebuffers(1, &FrameBuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, FrameBuffer);
+
+	glGenTextures(1, &depthTex);
+	glBindTexture(GL_TEXTURE_2D, depthTex);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, map_size, map_size, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, map_size, map_size, 0, GL_RG32F, GL_FLOAT, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	float borderCol[] = { 1.0f,1.0f,1.0f,1.0f };
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderCol);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
+	//glBindTexture(GL_TEXTURE,0);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTex, 0);
+
+	glDrawBuffer(GL_NONE);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+		std::cout << "Something went wrong with the buffer" << std::endl;
+	}
+
+	depthMatrixID = glGetUniformLocation(DepthShader, "depthMVP");
+	MatrixID = glGetUniformLocation(Shader, "MVP");
+	DepthBiasID = glGetUniformLocation(Shader, "DepthBiasMVP");
+	ShadowMapID = glGetUniformLocation(Shader, "shadowMap");
+}
+
 
 void Application::render()
 {
@@ -86,7 +128,7 @@ void Application::render()
 	glfwGetFramebufferSize(m_window, &width, &height);
 
 	m_windowsize = vec2(width, height); // update window size
-	glViewport(0, 0, width, height); // set the viewport to draw to the entire window
+	//glViewport(0, 0, width, height); // set the viewport to draw to the entire window
 
 	// clear the back-buffer
 	glClearColor(0.3f, 0.3f, 0.4f, 1.0f);
@@ -135,6 +177,62 @@ void Application::render()
 		m_water.modelTransform = translate(m_water.modelTransform, vec3(0, bobbingCount += 0.001, 0));
 	}
 
+
+	// shadow mapping
+	glBindFramebuffer(GL_FRAMEBUFFER, FrameBuffer);
+	glViewport(0, 0, map_size, map_size);
+
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	vec3 lightInvDir = vec3(80.f, 20.f, 100.f);
+	float s = 15;
+	float near_plane = -10.0f * s, far_plane = 30.0f * s;
+	mat4 depthProjectionMatrix = ortho(-10.0f * s, 10.0f * s, -10.0f * s, 10.0f * s, near_plane, far_plane);
+
+	mat4 depthViewMatrix = lookAt(lightInvDir, vec3(0, 0, 0), vec3(0, 1, 0));
+	mat4 depthModelMatrix = mat4(1.0);
+	//mat4 depthModelMatrix = m_model.modelTransform;
+	mat4 depthMVP = depthProjectionMatrix * depthViewMatrix * depthModelMatrix;
+
+	glUseProgram(DepthShader);
+	glUniformMatrix4fv(depthMatrixID, 1, GL_FALSE, &depthMVP[0][0]);
+
+	if (m_shadowed) {
+		m_terrain.draw(depthViewMatrix, depthProjectionMatrix);
+		m_water.draw(depthViewMatrix, depthProjectionMatrix);
+	}
+
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(0, 0, width, height);
+
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+
+	glUseProgram(Shader);
+	//mat4 modelview = view * modelTransform;
+	mat4 MVP = proj * view * m_terrain.modelTransform;
+
+	mat4 biasMatrix(
+		0.5, 0.0, 0.0, 0.0,
+		0.0, 0.5, 0.0, 0.0,
+		0.0, 0.0, 0.5, 0.0,
+		0.5, 0.5, 0.5, 1.0
+	);
+	mat4 depthBiasMVP = biasMatrix * depthMVP;
+
+	glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
+	glUniformMatrix4fv(DepthBiasID, 1, GL_FALSE, &depthBiasMVP[0][0]);
+	glUniform3fv(glGetUniformLocation(Shader, "lightdirection"), 1, value_ptr(lightInvDir));
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, depthTex);
+	glUniform1i(ShadowMapID, 0);
+
 	// draw the model
 	m_terrain.draw(view, proj);
 	m_water.draw(view, proj);
@@ -150,6 +248,7 @@ void Application::renderGUI()
 	ImGui::Begin("Options", 0);
 
 	// helpful drawing options
+	ImGui::Text("Application %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	ImGui::Checkbox("Show axis", &m_show_axis);
 	ImGui::SameLine();
 	ImGui::Checkbox("Show grid", &m_show_grid);
@@ -184,6 +283,10 @@ void Application::renderGUI()
 
 			m_needsUpdating = true;
 		}
+	}
+
+	if (ImGui::CollapsingHeader("Shadowing")) {
+		ImGui::Checkbox("Turn on Shadowing", &m_shadowed);
 	}
 	// finish creating window
 	ImGui::End();

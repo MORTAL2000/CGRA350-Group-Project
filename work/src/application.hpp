@@ -83,6 +83,23 @@ private:
 	// only update the mesh once every 0.1 seconds (can be changed)
 	std::chrono::high_resolution_clock::time_point timeStart = std::chrono::high_resolution_clock::now();
 
+
+	// Shadowing
+
+	GLuint Shader;
+	GLuint DepthShader;
+
+	GLuint FrameBuffer = 0;
+	GLuint depthTex;
+
+	GLuint depthMatrixID;
+	GLuint MatrixID;
+	GLuint DepthBiasID;
+	GLuint ShadowMapID;
+	const unsigned int map_size = 2048; // shadow map width and height
+
+	bool m_shadowed = true;
+
 public:
 	// setup
 	Application(GLFWwindow*);
@@ -107,4 +124,7 @@ public:
 
 	// update mesh
 	void updateMesh(basic_model &model, std::vector<std::vector<float>> map);
+
+	// shadow mapping
+	void initialiseBuffers();
 };

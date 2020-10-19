@@ -5,6 +5,9 @@ uniform mat4 uProjectionMatrix;
 uniform mat4 uModelViewMatrix;
 uniform vec3 uColor;
 
+const int MAX_BONES = 4;
+uniform mat4 uBones[MAX_BONES];
+
 // viewspace data (this must match the output of the fragment shader)
 in VertexData {
 	vec3 position;

@@ -33,6 +33,13 @@ boids_model::boids_model()
     sb.set_shader(GL_FRAGMENT_SHADER, CGRA_SRCDIR + std::string("//res//shaders//boid_frag.glsl"));
     const auto shader = sb.build();
     shader_ = shader;
+    scene_ = nullptr;
+}
+
+boids_model::~boids_model()
+{
+    // Clears importer pointers
+    import_.FreeScene();
 }
 
 /**
@@ -42,12 +49,17 @@ boids_model::boids_model()
  * @param proj Projection matrix.
  */
 void boids_model::draw(const mat4& view, const mat4 proj)
-{
+{   
     auto modelview = view;
+    vector<mat4> transforms;
+    bone_transform(glfwGetTime(), transforms);
+
+    //cout << glfwGetTime() << " - " << transforms[0][0].a << endl;
 
     glUseProgram(shader_); // load shader and variables
     glUniformMatrix4fv(glGetUniformLocation(shader_, "uProjectionMatrix"), 1, false, value_ptr(proj));
     glUniformMatrix4fv(glGetUniformLocation(shader_, "uModelViewMatrix"), 1, false, value_ptr(modelview));
+    glUniformMatrix4fv(glGetUniformLocation(shader_, "uBones"), transforms.size(), GL_TRUE, (GLfloat*)&transforms);
     glUniform3fv(glGetUniformLocation(shader_, "uColor"), 1, value_ptr(color_));
 
     if (!meshes_.empty()) {
@@ -65,16 +77,28 @@ void boids_model::draw(const mat4& view, const mat4 proj)
 void boids_model::load_model(const string& filename)
 {
     // Read file and triangulate, flip UVs because opengl reveresed around y-axis.
-    Assimp::Importer importer;
-    const auto scene = importer.ReadFile(filename, aiProcess_Triangulate | aiProcess_FlipUVs);
+    scene_ = import_.ReadFile(filename, aiProcess_Triangulate | aiProcess_FlipUVs);
 
     // Make sure the file was imported/didnt error.
-    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-        cout << "Assimp failed to load model: " << filename << endl << importer.GetErrorString() << endl;
-        return;
+    if (!scene_ || scene_->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene_->mRootNode) {
+        cout << "Assimp failed to load model: " << filename << endl << import_.GetErrorString() << endl;
     }
 
-    process_node(scene->mRootNode, scene);
+    if (scene_->mAnimations[0]->mTicksPerSecond != 0.0)
+    {
+        animation_ticks_ = scene_->mAnimations[0]->mTicksPerSecond;
+    } else
+    {
+        animation_ticks_ = 25.0f;
+    }
+
+    animation_duration_ = scene_->mAnimations[0]->mDuration;
+
+    global_inverse_transform = scene_->mRootNode->mTransformation;
+    global_inverse_transform.Inverse();
+
+    process_node(scene_->mRootNode, scene_);
+    process_anim(scene_);
 
     cout << "Loaded " << meshes_.size() << " meshes" << endl;
 }
@@ -92,12 +116,25 @@ void boids_model::process_node(aiNode* node, const aiScene* scene)
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
         meshes_.push_back(process_mesh(mesh, scene));
     }
-
+    
     // then do the same for each of its children
     for (unsigned int i = 0; i < node->mNumChildren; i++)
     {
         process_node(node->mChildren[i], scene);
     }
+}
+
+void boids_model::process_anim(const aiScene* scene)
+{
+    if(scene->mNumAnimations == 0)
+        return;
+
+    for(int i = 0; i < scene->mAnimations[0]->mNumChannels; i++)
+    {
+        animations_.push_back(scene->mAnimations[0]->mChannels[i]);
+    }
+
+    cout << "Loaded animations" << endl;
 }
 
 /**
@@ -153,10 +190,13 @@ gl_mesh boids_model::process_mesh(aiMesh* mesh, const aiScene* scene)
 
             if (bone_map_.find(bone_name) == bone_map_.end())
             {
-                bone_index = number_of_bones;
-                number_of_bones++;
-
-                // TODO: BONE INFO MAPPING
+                bone_index = bones_info_.size();
+                bones_info_.push_back(bone_info{mesh->mBones[j]->mOffsetMatrix});
+                bone_map_[bone_name] = bone_index;
+                
+            } else
+            {
+                bone_index = bone_map_[bone_name];
             }
 
             for (int k = 0; k < mesh->mBones[j]->mNumWeights; k++)
@@ -165,8 +205,6 @@ gl_mesh boids_model::process_mesh(aiMesh* mesh, const aiScene* scene)
                 float weight = mesh->mBones[j]->mWeights[k].mWeight;
 
                 bones[vert_id].add_bone_data(vert_id, weight);
-                    
-                //unsigned int local_vert_id = mesh->mBones[j]->mWeights[k].mVertexId;
             }
         }
 
@@ -199,6 +237,174 @@ gl_mesh boids_model::process_mesh(aiMesh* mesh, const aiScene* scene)
     }
 
     return mb.build();
+}
+
+/**
+ * Returns the transforms for bone_info at a given time in the current animation.
+ * @param time_seconds Time in the animation.
+ * @param transforms Out for transforms.
+ */
+void boids_model::bone_transform(float time_seconds, vector<mat4>& transforms)
+{
+    aiMatrix4x4 identity;
+    
+    double tps = 25.0f;
+    float tick = time_seconds * tps;
+    float animation_time = fmod(tick, animation_duration_);
+
+    aiNode* root = scene_->mRootNode;
+
+    bone_update_transform(animation_time, scene_->mRootNode, identity);
+    transforms.resize(bones_info_.size());
+
+    for (int i = 0; i < bones_info_.size(); i++)
+    {
+        transforms[i] = ai_to_mat4(bones_info_[i].transform);
+    }
+}
+
+void boids_model::bone_update_transform(float animation_time, aiNode* node, aiMatrix4x4 identity)
+{
+    string node_name(node->mName.data);
+    aiMatrix4x4 node_transform = node->mTransformation;
+
+    const aiAnimation* animation = scene_->mAnimations[0];
+    const aiNodeAnim* node_anim = find_node_anim(node_name);
+
+    if (node_anim)
+    {
+        // Rotation
+        aiQuaternion rotation_quat = calc_interpolated_rotation(animation_time, node_anim);
+        aiMatrix4x4 rotation_mat = aiMatrix4x4(rotation_quat.GetMatrix());
+
+        node_transform = rotation_mat;
+    }
+
+    // TODO: Global inverse matrix
+    aiMatrix4x4 global_transform = identity * node_transform;
+
+    // True if node_name exists in map
+    if (bone_map_.find(node_name) != bone_map_.end())
+    {
+        uint bone_index = bone_map_[node_name];
+        bones_info_[bone_index].transform = global_inverse_transform * global_transform * bones_info_[bone_index].offset;
+    }
+
+    // Recusively update children's transform
+    for (int i = 0; i < node->mNumChildren; i++)
+    {
+        bone_update_transform(animation_time, node->mChildren[i], global_transform);
+    }
+}
+
+aiNodeAnim* boids_model::find_node_anim(string node_name)
+{
+    for (aiNodeAnim* anim : animations_)
+    {
+        if (string(anim->mNodeName.data) == node_name)
+            return anim;
+    }
+
+    return nullptr;
+}
+
+aiQuaternion boids_model::calc_interpolated_rotation(float animation_time, const aiNodeAnim* node_anim)
+{
+    // If there's only one rotation key just return that.
+    if (node_anim->mNumRotationKeys == 1)
+    {
+        return node_anim->mRotationKeys[0].mValue;
+    }
+
+    // Calculate interpolated value given 2 key frames and current time
+    uint rotation_index = find_rotation(animation_time, node_anim); // Current key frame
+    uint next_rotation_index = rotation_index + 1; // Next key frame
+
+    // Index check
+    if (next_rotation_index > node_anim->mNumRotationKeys)
+    {
+        cout << "NEXT ROTATION INDEX LARGER THAN NUMBER OF ROTATION KEYS" << endl;
+        return aiQuaternion();
+    }
+
+    // Get the time between the two frames
+    float delta_time = node_anim->mRotationKeys[next_rotation_index].mTime - node_anim->mRotationKeys[rotation_index].mTime;
+    // Get the interpolation factor/Normalized time between frames
+    float factor = (animation_time - node_anim->mRotationKeys[rotation_index].mTime) / delta_time;
+
+    const aiQuaternion& start_rotation = node_anim->mRotationKeys[rotation_index].mValue;
+    const aiQuaternion& end_rotation = node_anim->mRotationKeys[next_rotation_index].mValue;
+
+    aiQuaternion final_rotation;
+    aiQuaternion::Interpolate(final_rotation, start_rotation, end_rotation, factor);
+    return final_rotation.Normalize();
+}
+
+/**
+* Returns the position key frame for a given time in an animation.
+* @param animation_time Time in animation.
+* @param anim Animation.
+*/
+uint boids_model::find_position(float animation_time, const aiNodeAnim* anim)
+{
+    for (uint i = 0; i < anim->mNumPositionKeys -1; i++)
+    {
+        if (animation_time < (float) anim->mPositionKeys[i + 1].mTime)
+        {
+            return i;
+        }
+    }
+
+    return 0; // Should not reach here.
+}
+
+/**
+ * Returns the rotation key frame for a given time in an animation.
+ * @param animation_time Time in animation.
+ * @param anim Animation.
+ */
+uint boids_model::find_rotation(float animation_time, const aiNodeAnim* anim)
+{
+    for (uint i = 0; i < anim->mNumRotationKeys -1; i++)
+    {
+        if (animation_time < (float) anim->mRotationKeys[i + 1].mTime)
+        {
+            return i;
+        }
+    }
+
+    return 0; // Should not reach here.
+}
+
+/**
+ * Given an aiMatrix4x4 returns a glm mat4.
+ * @param in The aiMatrix4x4 to convert.
+ */
+mat4 boids_model::ai_to_mat4(aiMatrix4x4 in)
+{
+    mat4 temp;
+    
+    temp[0][0] = in.a1;
+    temp[1][0] = in.b1;
+    temp[2][0] = in.c1;
+    temp[3][0] = in.d1;
+
+    temp[0][1] = in.a2;
+    temp[1][1] = in.b2;
+    temp[2][1] = in.c2;
+    temp[3][1] = in.d2;
+
+    temp[0][2] = in.a3;
+    temp[1][2] = in.b3;
+    temp[2][2] = in.c3;
+    temp[3][2] = in.d3;
+
+    temp[0][3] = in.a4;
+    temp[1][3] = in.b4;
+    temp[2][3] = in.c4;
+    temp[3][3] = in.d4;
+
+    return temp;
 }
 
 gl_mesh model_builder::build() const {
@@ -242,7 +448,7 @@ gl_mesh model_builder::build() const {
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * indices.size(), &indices[0], GL_STATIC_DRAW);
 
 
-    // set the index count and draw modes
+    // set the index count and draw modesvoid process_anim(aiNo);aconst aiScene(*( scenevector<aiNodeAnim*> amo,s;nimatianimations;_
     m.index_count = indices.size();
     m.mode = mode;
 

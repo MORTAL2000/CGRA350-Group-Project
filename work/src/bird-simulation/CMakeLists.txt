@@ -7,6 +7,9 @@ set(sources
 	"boids_model.hpp"
 	"boids_model.cpp"
 
+	"boids_bone.hpp"
+	"boids_bone.cpp"
+
 	"boids_renderer.hpp"
 	"boids_renderer.cpp"
 

@@ -1,5 +1,12 @@
 #pragma once
 
+/**
+* Skeletal Animation Learning Resources
+* https://realitymultiplied.wordpress.com/2016/05/02/assimp-skeletal-animation-tutorial-1-vertex-weights-and-indices/
+* http://ogldev.atspace.co.uk/www/tutorial38/tutorial38.html
+* https://github.com/vovan4ik123/assimp-Cpp-OpenGL-skeletal-animation
+*/
+
 // glm
 #include <glm/glm.hpp>
 
@@ -16,6 +23,7 @@
 
 // project
 #include "cgra/cgra_mesh.hpp"
+#include "boids_bone.hpp"
 
 using namespace glm;
 using namespace std;
@@ -25,27 +33,10 @@ using namespace cgra;
 
 namespace blukzen
 {
-    class boids_model
-    {
-        vec3 color_ {0.7, 0, 0};
-        GLuint shader_ = 0;
-        vector<gl_mesh> meshes_;
-        map<string, unsigned int> bone_map_; // Maps vertex bone data to bone info
-
-        unsigned int number_of_bones = 0;
-        
-    public:
-        boids_model();
-        void draw(const mat4& view, const mat4 proj);
-        void load_model(const string& filename);
-        void process_node(aiNode* node, const aiScene* scene);
-        gl_mesh process_mesh(aiMesh* mesh, const aiScene* scene);
-    };
-
     struct bone_info
     {
-        mat4 offset;
-        mat4 transform;
+        aiMatrix4x4 offset;
+        aiMatrix4x4 transform;
     };
 
     struct vertex_bone
@@ -125,4 +116,47 @@ namespace blukzen
             std::cout << std::endl;
         }
     };
+
+    
+    class boids_model
+    {
+        vec3 color_ {0.7, 0, 0};
+        GLuint shader_ = 0;
+        vector<gl_mesh> meshes_;
+        vector<aiNodeAnim*> animations_;
+        vector<bone_info> bones_info_;
+        vector<bone> bones_;
+
+        Assimp::Importer import_;
+        const aiScene* scene_;
+        aiMatrix4x4 global_inverse_transform;
+        map<string, unsigned int> bone_map_; // Maps vertex bone data to bone info
+
+        float animation_duration_ = 0;
+        float animation_ticks_ = 0;
+        unsigned int number_of_bones_ = 0;
+        
+    public:
+        boids_model();
+        ~boids_model();
+        void draw(const mat4& view, const mat4 proj);
+
+        // Model processing
+        void load_model(const string& filename);
+        void process_node(aiNode* node, const aiScene* scene);
+        void process_anim(const aiScene* scene);
+        gl_mesh process_mesh(aiMesh* mesh, const aiScene* scene);
+
+        // Animation
+        void bone_transform(float time_seconds, vector<mat4>& transforms);
+        void bone_update_transform(float animation_time, aiNode* node, aiMatrix4x4 identity);
+        aiNodeAnim* find_node_anim(string node_name);
+        aiQuaternion calc_interpolated_rotation(float animation_time, const aiNodeAnim* node_anim);
+        uint find_position(float animation_time, const aiNodeAnim* anim);
+        uint find_rotation(float animation_time, const aiNodeAnim* anim);
+        static mat4 ai_to_mat4(aiMatrix4x4 in);
+    };
+
+
+
 }

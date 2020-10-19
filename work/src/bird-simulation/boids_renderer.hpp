@@ -24,6 +24,11 @@ using namespace cgra;
 
 namespace blukzen
 {
+    struct flock
+    {
+        vector<boid> boids;
+    };
+    
     class boids_renderer {
         boids_model model_;
         vec3 target_position_;
@@ -31,15 +36,18 @@ namespace blukzen
         float m_deltaTime = 0.0f;
         float m_lastFrame = 0.0f;
 
+        int initial_flocks = 6;
+        int flock_size = 6;
+
     public:
         vector<boid> boids; // Boids array
+        vector<flock> flocks;
         
         boids_renderer();
         ~boids_renderer();
         void update(const mat4& view, const mat4 proj);
         void render_boids(const mat4& view, const mat4 proj);
         void update_boids();
-        void apply_boid_rules(boid& b);
     };
 
 }

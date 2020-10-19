@@ -22,12 +22,13 @@ void boid::move()
     // Update velocity
     velocity += acceleration;
     velocity = clamp(velocity, -max_speed, max_speed);
+    velocity.y = clamp(velocity.y, -max_y, max_y);
 
     // Update position
     position += velocity;
 
     // Check horizontal bounds
-    /*if (position.x < -horizontal_bounds)
+    if (position.x < -horizontal_bounds)
         position.x = horizontal_bounds - boid_size;
     else if (position.x > horizontal_bounds)
         position.x = -horizontal_bounds + boid_size;
@@ -35,7 +36,7 @@ void boid::move()
     if (position.z < -horizontal_bounds)
         position.z = horizontal_bounds - boid_size;
     else if (position.z > horizontal_bounds)
-        position.z = -horizontal_bounds + boid_size;*/
+        position.z = -horizontal_bounds + boid_size;
     
     // Reset acceleration
     acceleration *= 0;
@@ -58,7 +59,7 @@ void boid::update(std::vector<boid>& boids, float delta)
     acceleration += s * delta;
     acceleration += a * delta;
     acceleration += c * delta;
-    acceleration += w * delta;
+    //acceleration += w * delta;
     acceleration += h * delta;
 }
 
@@ -70,7 +71,7 @@ vec3 boid::steer(glm::vec3 vec)
 
 vec3 boid::separate(std::vector<boid>& boids)
 {
-    float seperation_dist = 25.0f;
+    float seperation_dist = 10.0f;
     vec3 steer = vec3(0);
 
     int count = 0;
@@ -106,7 +107,7 @@ vec3 boid::separate(std::vector<boid>& boids)
 
 vec3 boid::align(std::vector<boid>& boids)
 {
-    float neighbour_dist = 50;
+    float neighbour_dist = 10;
     vec3 sum = vec3(0);
     int count = 0;
 
@@ -136,7 +137,7 @@ vec3 boid::align(std::vector<boid>& boids)
 
 vec3 boid::cohesion(std::vector<boid>& boids)
 {
-    float neighbour_dist = 60;
+    float neighbour_dist = 80;
     vec3 sum = vec3(0);
     int count = 0;
     for (boid other : boids)
@@ -207,7 +208,7 @@ vec3 boid::avoid_walls()
 
 vec3 boid::target_height()
 {
-    float max_dist = 30.0f;
+    float max_dist = 25.0f;
     
     if (position.y < desired_height - max_dist || position.y > desired_height + max_dist)
     {

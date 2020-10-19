@@ -25,14 +25,15 @@ public:
     glm::vec3 position;
     glm::vec3 velocity;
     glm::vec3 acceleration = glm::vec3(0);
-    
-    float max_speed = 0.8;
+
+    float max_y = 0.2;
+    float max_speed = 0.6;
     float max_force = 0.1;
 
     float desired_height = 100;
     float ceiling_height = 150;
     float floor_height = 40;
-    float horizontal_bounds = 150;
+    float horizontal_bounds = 180;
     float boid_size = 2;
 
     bounds bounds{
@@ -40,9 +41,9 @@ public:
         glm::vec3(-horizontal_bounds, floor_height, -horizontal_bounds)
     };
     
-    const float alignment_weight = 0.9;//0.15;
-    const float cohesion_weight = 0.9;//0.15;
-    const float separate_weight = 1.2;//0.3;
+    const float alignment_weight = 0.5;//0.15;
+    const float cohesion_weight = 0.7;//0.15;
+    const float separate_weight = 1;//0.3;
     const float wall_avoidance_weight = 1;//0.2;
     const float target_height_weight = 1;//0.9;
 

@@ -22,6 +22,7 @@
 using namespace std;
 using namespace cgra;
 using namespace glm;
+using namespace blukzen;
 
 
 void basic_model::draw(const glm::mat4& view, const glm::mat4 proj)

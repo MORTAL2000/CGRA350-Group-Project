@@ -84,7 +84,7 @@ void Application::render() {
 
 
 	// draw the model
-	//m_model.draw(view, proj);
+	m_model.draw(view, proj);
 	boids_renderer_.update(view, proj);
 }
 

@@ -28,7 +28,8 @@ namespace blukzen
         boids_model model_;
         vec3 target_position_;
 
-        vec3 flock_centre;
+        float m_deltaTime = 0.0f;
+        float m_lastFrame = 0.0f;
 
     public:
         vector<boid> boids; // Boids array

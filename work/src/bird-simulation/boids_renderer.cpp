@@ -22,10 +22,11 @@ blukzen::boids_renderer::boids_renderer()
 {
     model_.load_model(CGRA_SRCDIR + std::string("//res//assets//bird.dae"));
 
-    boids.resize(10);
+    boids.resize(5);
     for (boid &boid : boids)
     {
-        boid.position = vec3(rand() % 10 + 100, rand() % 40 + 25, rand() % 10 + 100);
+        boid.position = vec3(rand() % 10 + 20, rand() % 100 + 25, rand() % 10 + 20);
+        boid.velocity = vec3(rand() % 2 - 1 * (boid.max_speed/2), 0, rand() % 2 - 1 * (boid.max_speed/2));
         cout << "Spawned boid at " << boid.position.x << ", " << boid.position.y << ", " << boid.position.z << endl;
     }
 
@@ -38,6 +39,11 @@ blukzen::boids_renderer::~boids_renderer()
 
 void blukzen::boids_renderer::update(const mat4& view, const mat4 proj)
 {
+    // Update current frame
+    float currentFrame = glfwGetTime();
+    m_deltaTime = currentFrame - m_lastFrame;
+    m_lastFrame = currentFrame;
+    
     update_boids();
     render_boids(view, proj);
 }
@@ -48,7 +54,7 @@ void blukzen::boids_renderer::render_boids(const mat4& view, const mat4 proj)
     
     for (boid &boid : boids)
     {
-        transform = translate(transform, boid.position);
+        transform = translate(transform, boid.position) * orientation(normalize(boid.velocity), vec3(0, 0, 1));
         model_.draw(view * transform, proj);
         
         transform = mat4(1);
@@ -57,17 +63,9 @@ void blukzen::boids_renderer::render_boids(const mat4& view, const mat4 proj)
 
 void blukzen::boids_renderer::update_boids()
 {
-    vec3 flock_center(0);
     for (boid &boid : boids)
     {
-        flock_center += boid.position;
-    }
-    
-    for (boid &boid : boids)
-    {
-        boid.flock_center = flock_center;
-        boid.flock_size = boids.size();
-        boid.update(boids);
+        boid.update(boids, m_deltaTime);
         boid.move();
     }
 }

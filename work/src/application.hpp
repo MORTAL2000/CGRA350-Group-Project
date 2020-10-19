@@ -6,6 +6,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 // project
+#include "bird-simulation/boids_renderer.hpp"
 #include "opengl.hpp"
 #include "cgra/cgra_mesh.hpp"
 #include "skeleton_model.hpp"
@@ -48,6 +49,8 @@ private:
 
 	// geometry
 	basic_model m_model;
+
+	BoidsRenderer m_boidsRenderer;
 
 	// terrain generation
 	std::vector<std::vector<float>> noiseMap;

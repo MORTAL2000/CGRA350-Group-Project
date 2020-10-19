@@ -16,6 +16,7 @@
 #include "cgra/cgra_wavefront.hpp"
 
 #include "core/camera.hpp"
+#include "bird-simulation/boids_renderer.hpp"
 #include "core/NoiseGenerator.hpp"
 
 
@@ -48,6 +49,9 @@ Application::Application(GLFWwindow *window) : m_window(window) {
 
 	// generate terrain with the default attributes
 	updateTerrain();
+
+	// TODO: Reference free bird model license
+	m_boidsRenderer.load_collada_data(CGRA_SRCDIR + std::string("//res//assets//bird.dae"));
 }
 
 
@@ -83,6 +87,7 @@ void Application::render() {
 
 	// draw the model
 	m_model.draw(view, proj);
+	m_boidsRenderer.draw(view, proj);
 }
 
 

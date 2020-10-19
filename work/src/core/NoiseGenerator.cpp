@@ -1,68 +1,102 @@
-#define BILLION 1000000000
+#include "NoiseGenerator.hpp"
 
-#include "core/NoiseGenerator.hpp"
-
-#include <glm/gtc/noise.hpp>
-
-#include <iostream>
+// std
 #include <random>
+#include <iostream>
+
 using namespace std;
 
-NoiseGenerator::NoiseGenerator(float amplitude) : m_amplitude(amplitude)
+NoiseGenerator::NoiseGenerator(int height, int width) : m_height(height), m_width(width)
 {
-	// Set seed as a random number between 1 and 1,000,000,000
+	regenerateSeeds();
+	cout << "created objected! " << endl;
 
+	m_noiseMap.resize(m_width, std::vector<float>(m_height, -1));
 }
 
-std::vector<std::vector<float>> NoiseGenerator::GenerateNoiseMap(int width, int height, int octaves, float scale, float persistance, float lacunarity)
+NoiseGenerator::NoiseGenerator()
 {
-	std::random_device r;
-	std::default_random_engine engine(r());
-	std::uniform_int_distribution<int> uniform_dist(1, BILLION);
-	
-	m_seeds.resize(width * height);
-	for(int i = 0; i < width * height; i++)	m_seeds[i] = uniform_dist(engine);
+	this->~NoiseGenerator();
+}
 
-	m_noiseMap.resize(width, std::vector<float>(height, -1));
+NoiseGenerator::~NoiseGenerator()
+{
+	cout << "destroyed object! " << this << endl;
+}
 
-	for (int y = 0; y < height; y++)
+std::vector<std::vector<float>> NoiseGenerator::GenerateNoiseMap(int octaves, float amplitude, float scale, float persistance)
+{
+
+	float oldMax = 1.0e+09;
+	float oldMin = 1.0e+09;
+	amplitude *= persistance;
+
+	float HIGHRANGE = 10 * amplitude;
+	float LOWRANGE = -1 * amplitude;
+
+	for (int y = 0; y < m_height; y++)
 	{
-		for (int x = 0; x < width; x++)
+		for (int x = 0; x < m_width; x++)
 		{
 			float noiseHeight = 0.0f;
-			float scale = 100.0f;
-			float scaleAcc = 0.0f;
+			float fscale = 1;
+
+			float frequency = 1.0f;
+
+			float value = -1;
 
 			for (int i = 0; i < octaves; i++)
 			{
-				int nPitch = width >> i;
+				int nPitch = m_width >> i;
 				if (nPitch == 0) nPitch = 1;
-				int nSampleX1 = (x / nPitch) * nPitch;
-				int nSampleY1 = (y / nPitch) * nPitch;
 
-				int nSampleX2 = (nSampleX1 + nPitch) % width;
-				int nSampleY2 = (nSampleY1 + nPitch) % width; 
+				int nSampleX1 = ((x / nPitch) * nPitch);
+				int nSampleY1 = ((y / nPitch) * nPitch);
 
-				float blendX = (float)(x - nSampleX1) / (float)nPitch;
-				float blendY = (float)(y - nSampleY1) / (float)nPitch;
+				int nSampleX2 = (nSampleX1 + nPitch) % m_width;
+				int nSampleY2 = (nSampleY1 + nPitch) % m_width;
 
-				float sampleT = (1.0f - blendX) * m_seeds[nSampleY1 * width + nSampleX1] + blendX * m_seeds[nSampleY1 * width + nSampleX2];
-				float sampleB = (1.0f - blendX) * m_seeds[nSampleY2 * width + nSampleX1] + blendX * m_seeds[nSampleY2 * width + nSampleX2];
+				float blendX = ((float)(x - nSampleX1) / (float)nPitch) * frequency;
+				float blendY = ((float)(y - nSampleY1) / (float)nPitch) * frequency;
 
-				scaleAcc += scale;
-				noiseHeight += (blendY * (sampleB - sampleT) + sampleT) * scale;
-				scale /= 2.0f;
+				float sampleT = (1.0f - blendX) * m_seeds[nSampleY1 * m_width + nSampleX1] + blendX * m_seeds[nSampleY1 * m_width + nSampleX2];
+				float sampleB = (1.0f - blendX) * m_seeds[nSampleY2 * m_width + nSampleX1] + blendX * m_seeds[nSampleY2 * m_width + nSampleX2];
+
+				noiseHeight += (blendY * (sampleB - sampleT) + sampleT) * fscale;
+
+				if (oldMax < noiseHeight)
+				{
+					oldMax = noiseHeight;
+				}
+				if (oldMin > noiseHeight)
+				{
+					oldMin = noiseHeight;
+				}
+
+				float oldRange = oldMax - oldMin;
+				float newRange = (HIGHRANGE - LOWRANGE);
+
+				fscale /= 2.0f;
+				value *= amplitude;
+				amplitude *= persistance;
+
+				value = ((noiseHeight - oldMin) / (oldMax - oldMin)) * (HIGHRANGE - LOWRANGE) + LOWRANGE;
+
 			}
-			//cout << noiseHeight / scaleAcc / 10000000 << endl;
-			m_noiseMap.at(x).at(y) = noiseHeight / scaleAcc / 10000000;
 
+			m_noiseMap.at(x).at(y) = value;
 		}
 	}
 
 	return m_noiseMap;
 }
 
-float NoiseGenerator::getHeight(int x, int y)
+void NoiseGenerator::regenerateSeeds()
 {
-	return m_noiseMap.at(x).at(y);
+	std::random_device r;
+	std::default_random_engine engine(r());
+	std::uniform_int_distribution<int> uniform_dist(1, 1.0e+09);
+
+	m_seeds.resize(m_width * m_height);
+	for (int i = 0; i < m_width * m_height; i++)	m_seeds[i] = uniform_dist(engine);
 }

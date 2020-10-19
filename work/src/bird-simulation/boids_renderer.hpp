@@ -14,9 +14,31 @@
 #include "opengl.hpp"
 #include <iostream>
 
+
+#include "boids.hpp"
+#include "boids_model.hpp"
+
 using namespace glm;
 using namespace std;
 using namespace cgra;
 
-class boids_renderer {
-};
+namespace blukzen
+{
+    class boids_renderer {
+        boids_model model_;
+        vec3 target_position_;
+
+        vec3 flock_centre;
+
+    public:
+        vector<boid> boids; // Boids array
+        
+        boids_renderer();
+        ~boids_renderer();
+        void update(const mat4& view, const mat4 proj);
+        void render_boids(const mat4& view, const mat4 proj);
+        void update_boids();
+        void apply_boid_rules(boid& b);
+    };
+
+}

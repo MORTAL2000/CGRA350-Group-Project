@@ -50,9 +50,6 @@ Application::Application(GLFWwindow *window) : m_window(window) {
 
 	// generate terrain with the default attributes
 	updateTerrain();
-
-	// TODO: Reference free bird model license
-	boids_model_.load_model(CGRA_SRCDIR + std::string("//res//assets//bird.dae"));
 }
 
 
@@ -88,7 +85,7 @@ void Application::render() {
 
 	// draw the model
 	//m_model.draw(view, proj);
-	boids_model_.draw(view, proj);
+	boids_renderer_.update(view, proj);
 }
 
 

@@ -13,6 +13,7 @@
 
 // bird-simulation
 #include "bird-simulation/boids_model.hpp"
+#include "bird-simulation/boids_renderer.hpp"
 
 // Basic model that holds the shader, mesh and transform for drawing.
 // Can be copied and modified for adding in extra information for drawing
@@ -52,7 +53,7 @@ private:
 	basic_model m_model;
 
 	// bird simulation
-	blukzen::boids_model boids_model_;
+	blukzen::boids_renderer boids_renderer_;
 
 	// terrain generation
 	std::vector<std::vector<float>> noiseMap;

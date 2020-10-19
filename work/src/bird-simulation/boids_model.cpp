@@ -10,6 +10,7 @@
 
 // std
 #include <iostream>
+#include <map>
 
 // opengl
 #include "opengl.hpp"
@@ -28,8 +29,8 @@ boids_model::boids_model()
 {
     // Load model shaders
     shader_builder sb;
-    sb.set_shader(GL_VERTEX_SHADER, CGRA_SRCDIR + std::string("//res//shaders//color_vert.glsl"));
-    sb.set_shader(GL_FRAGMENT_SHADER, CGRA_SRCDIR + std::string("//res//shaders//color_frag.glsl"));
+    sb.set_shader(GL_VERTEX_SHADER, CGRA_SRCDIR + std::string("//res//shaders//boid_vert.glsl"));
+    sb.set_shader(GL_FRAGMENT_SHADER, CGRA_SRCDIR + std::string("//res//shaders//boid_frag.glsl"));
     const auto shader = sb.build();
     shader_ = shader;
 }
@@ -106,46 +107,76 @@ void boids_model::process_node(aiNode* node, const aiScene* scene)
  */
 gl_mesh boids_model::process_mesh(aiMesh* mesh, const aiScene* scene)
 {
-    const auto weights_per_index = 4;
-    
-    vector<vec3> positions;
-    vector<vec3> normals;
-    vector<vec2> uvs;
+    vector<vertex> vertices;
     vector<unsigned int> indices;
+    vector<vertex_bone> bones;
 
-    int bone_arrays_size = mesh->mNumVertices*weights_per_index;
+    // This is used to get the vertices that are pointed to, by the bones.
+    auto base_vertex_index = 0;
+    const auto vertex_size = 5;
+
+    vertices.resize(mesh->mNumVertices);
+    bones.resize(mesh->mNumVertices);
+    
 
     // Process mesh data
     for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
-        vec3 v;
-
         // Positions
-        v.x = mesh->mVertices[i].x;
-        v.y = mesh->mVertices[i].y;
-        v.z = mesh->mVertices[i].z;
-        positions.push_back(v);
+        vertices[i].pos.x = mesh->mVertices[i].x;
+        vertices[i].pos.y = mesh->mVertices[i].y;
+        vertices[i].pos.z = mesh->mVertices[i].z;
 
         // Normals
         if (mesh->HasNormals()) {
-            v.x = mesh->mNormals[i].x;
-            v.y = mesh->mNormals[i].y;
-            v.z = mesh->mNormals[i].z;
-
-            normals.push_back(v);
+            vertices[i].norm.x = mesh->mNormals[i].x;
+            vertices[i].norm.y = mesh->mNormals[i].y;
+            vertices[i].norm.z = mesh->mNormals[i].z;
         }
 
         // UVs
-        vec2 uv;
-
         if (mesh->mTextureCoords[0]) {
-            uv.x = mesh->mTextureCoords[0][i].x;
-            uv.y = mesh->mTextureCoords[0][i].y;
+            vertices[i].uv.x = mesh->mTextureCoords[0][i].x;
+            vertices[i].uv.y = mesh->mTextureCoords[0][i].y;
         }
         else {
-            uv = vec2(0.0f, 0.0f);
+            vertices[i].uv = vec2(0.0f, 0.0f);
+        }
+    }
+
+    // Bone data
+    if (mesh->HasBones())
+    {
+        for (int j = 0; j < mesh->mNumBones; j++)
+        {
+            auto bone_index = 0;
+            auto bone_name = string(mesh->mBones[j]->mName.data);
+
+            if (bone_map_.find(bone_name) == bone_map_.end())
+            {
+                bone_index = number_of_bones;
+                number_of_bones++;
+
+                // TODO: BONE INFO MAPPING
+            }
+
+            for (int k = 0; k < mesh->mBones[j]->mNumWeights; k++)
+            {
+                auto vert_id = mesh->mBones[j]->mWeights[k].mVertexId;
+                float weight = mesh->mBones[j]->mWeights[k].mWeight;
+
+                bones[vert_id].add_bone_data(vert_id, weight);
+                    
+                //unsigned int local_vert_id = mesh->mBones[j]->mWeights[k].mVertexId;
+            }
         }
 
-        uvs.push_back(uv);
+        // Add bone info to vertex data
+        for (int m = 0; m < mesh->mNumVertices; m++)
+        {
+            vertices[m].ids = vec4(bones[m].ids[0], bones[m].ids[1], bones[m].ids[2], bones[m].ids[3]);
+            vertices[m].weights = vec4(bones[m].weights[0], bones[m].weights[1], bones[m].weights[2], bones[m].weights[3]);
+        }
+        
     }
 
     // Indices
@@ -162,9 +193,9 @@ gl_mesh boids_model::process_mesh(aiMesh* mesh, const aiScene* scene)
     // Build mesh
     model_builder mb;
     
-    for (unsigned int i = 0; i < positions.size(); i++) {
+    for (unsigned int i = 0; i < vertices.size(); i++) {
         mb.push_index(indices[i]);
-        mb.push_vertex(vertex{positions[i],normals[i], uvs[i]});
+        mb.push_vertex(vertices[i]);
     }
 
     return mb.build();
@@ -177,11 +208,8 @@ gl_mesh model_builder::build() const {
     glGenBuffers(1, &m.vbo); // VBO stores the vertex data
     glGenBuffers(1, &m.ibo); // IBO stores the indices that make up primitives
 
-
     // VAO
     glBindVertexArray(m.vao);
-
-		
     // VBO (single buffer, interleaved)
     glBindBuffer(GL_ARRAY_BUFFER, m.vbo);
     // upload ALL the vertex data in one buffer
@@ -200,6 +228,13 @@ gl_mesh model_builder::build() const {
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(vertex), (void *)(offsetof(vertex, uv)));
 
+    // Bone ids
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 4, GL_INT, GL_FALSE, sizeof(vertex), (void *)(offsetof(vertex, ids)));
+
+    // Bone weights
+    glEnableVertexAttribArray(4);
+    glVertexAttribPointer(4, 4, GL_FLOAT, GL_TRUE, sizeof(vertex), (void *)(offsetof(vertex, weights)));
 
     // IBO
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m.ibo);

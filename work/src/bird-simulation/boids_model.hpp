@@ -12,6 +12,7 @@
 
 // std
 #include <iostream>
+#include <map>
 
 // project
 #include "cgra/cgra_mesh.hpp"
@@ -20,6 +21,8 @@ using namespace glm;
 using namespace std;
 using namespace cgra;
 
+#define NUM_BONES_PER_VERTEX 4
+
 namespace blukzen
 {
     class boids_model
@@ -27,20 +30,55 @@ namespace blukzen
         vec3 color_ {0.7, 0, 0};
         GLuint shader_ = 0;
         vector<gl_mesh> meshes_;
-    
+        map<string, unsigned int> bone_map_; // Maps vertex bone data to bone info
+
+        unsigned int number_of_bones = 0;
+        
     public:
         boids_model();
         void draw(const mat4& view, const mat4 proj);
         void load_model(const string& filename);
         void process_node(aiNode* node, const aiScene* scene);
-        static gl_mesh process_mesh(aiMesh* mesh, const aiScene* scene);
+        gl_mesh process_mesh(aiMesh* mesh, const aiScene* scene);
     };
 
+    struct bone_info
+    {
+        mat4 offset;
+        mat4 transform;
+    };
+
+    struct vertex_bone
+    {
+        unsigned int ids[NUM_BONES_PER_VERTEX] {0, 0, 0, 0};
+        float weights[NUM_BONES_PER_VERTEX] {0, 0, 0, 0};
+
+        /**
+         * Append given data to ids & weights
+         * @param id
+         * @param weight
+         */
+        void add_bone_data(unsigned int id, float weight)
+        {
+            for (int i = 0; i < sizeof(ids) / sizeof(unsigned int); i++)
+            {
+                if (weights[i] == 0.0)
+                {
+                    ids[i] = id;
+                    weights[i] = weight;
+                    return;
+                }
+            }
+        }
+    };
+    
     struct vertex
     {
-        glm::vec3 pos {0};
-        glm::vec3 norm {0};
-        glm::vec2 uv {0};
+        vec3 pos {0};
+        vec3 norm {0};
+        vec2 uv {0};
+        vec4 ids {0};
+        vec4 weights {0};
     };
 
     struct model_builder

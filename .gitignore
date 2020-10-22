@@ -17,6 +17,7 @@
 mono_crash.*
 
 # Build results
+build/
 [Dd]ebug/
 [Dd]ebugPublic/
 [Rr]elease/
@@ -72,12 +73,10 @@ StyleCopReport.xml
 *_i.c
 *_p.c
 *_h.h
-*.ilk
 *.meta
 *.obj
 *.iobj
 *.pch
-*.pdb
 *.ipdb
 *.pgc
 *.pgd
@@ -374,20 +373,9 @@ FodyWeavers.xsd
 *.gch
 *.pch
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
 # Fortran module files
 *.mod
 *.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
 
 # Executables
 *.exe
@@ -397,3 +385,7 @@ FodyWeavers.xsd
 runcmake.*
 *.sh
 *.bat
+
+!work/ext/assimp/*
+!build/assimp-vc142-mtd.dll
+!build/bin/Debug/*

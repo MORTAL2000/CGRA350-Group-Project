@@ -190,7 +190,7 @@ void Application::render()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	vec3 lightInvDir = vec3(80.f, 20.f, 100.f);
-	float s = 15;
+	float s = 18;
 	float near_plane = -10.0f * s, far_plane = 30.0f * s;
 	mat4 depthProjectionMatrix = ortho(-10.0f * s, 10.0f * s, -10.0f * s, 10.0f * s, near_plane, far_plane);
 
@@ -274,7 +274,7 @@ void Application::renderGUI()
 		if (ImGui::SliderInt("octaves", &m_octaves, 2, 9, "%1.0f"))		m_needsUpdating = true;
 		if (ImGui::SliderFloat("amplitude", &m_amplitude, 1, 5, "%0.5f"))	m_needsUpdating = true;
 		if (ImGui::SliderFloat("scale", &m_scale, 1, 3, "%0.5f"))			m_needsUpdating = true;
-		if (ImGui::SliderFloat("persistance", &m_persistance, 0.5, 1.5, "%0.5f"))	m_needsUpdating = true;
+		if (ImGui::SliderFloat("persistence", &m_persistance, 0.5, 1.5, "%0.5f"))	m_needsUpdating = true;
 		if (ImGui::SliderFloat("m_exponent", &m_exponent, 0.5, 1.5, "%0.5f"))			m_needsUpdating = true;
 		if (ImGui::SliderFloat("Base Bias", &bias1, 0, 2, "%0.5f"))			m_needsUpdating = true;
 		if (ImGui::SliderFloat("Secondary Bias", &bias2, 0, 2, "%0.5f"))			m_needsUpdating = true;
